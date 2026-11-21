@@ -1,0 +1,19 @@
+# Eclipse workspace
+.metadata/
+
+# Compiled files
+bin/
+target/
+build/
+*.class
+
+# Logs
+*.log
+
+# Local environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
