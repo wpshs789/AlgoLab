@@ -1,11 +1,23 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%
+    // 파일 업로드 또는 직전 실행에서 저장한 숫자 배열을 기본 입력값으로 표시한다.
+    // lastNumbers에는 서버가 검증하고 정규화한 정수 문자열만 저장한다.
+    String lastNumbers = (String) session.getAttribute("lastNumbers");
+    if (lastNumbers == null || lastNumbers.isEmpty()) {
+        lastNumbers = "5, 3, 1, 4, 2";
+    }
+    String uploadNotice = (String) session.getAttribute("uploadNotice");
+    String uploadError = (String) session.getAttribute("uploadError");
+    session.removeAttribute("uploadNotice");
+    session.removeAttribute("uploadError");
+%>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>AlgoLab - 알고리즘 시각화</title>
-    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261116a">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261116b">
 </head>
 <body>
     <jsp:include page="menu.jsp" />
@@ -26,11 +38,33 @@
                 </div>
                 <div class="form-group">
                     <label for="numbers">숫자 배열 입력</label>
-                    <input type="text" id="numbers" name="numbers" value="5, 3, 1, 4, 2"
+                    <input type="text" id="numbers" name="numbers" value="<%= lastNumbers %>"
                            placeholder="예: 5, 3, 1, 4, 2" required>
                     <p class="input-help">쉼표(,)로 구분된 정수 1~30개를 입력하세요.</p>
                 </div>
                 <button type="submit" class="start-btn">▶ 시각화 시작</button>
+            </form>
+        </section>
+        <section class="panel upload-panel">
+            <h2>배열 파일 불러오기</h2>
+            <p class="subtitle upload-desc">TXT 또는 CSV 파일에 적힌 정수를 읽어 위 입력창에 채웁니다. 내용을 확인하거나 수정한 뒤 시각화를 시작하세요.</p>
+
+            <% if (uploadNotice != null) { %>
+                <p class="upload-message success" role="status"><%= uploadNotice %></p>
+            <% } %>
+            <% if (uploadError != null) { %>
+                <p class="upload-message error" role="alert"><%= uploadError %></p>
+            <% } %>
+
+            <form action="<%= request.getContextPath() %>/upload-array"
+                  method="post" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="arrayFile">배열 파일 선택</label>
+                    <input type="file" id="arrayFile" name="arrayFile"
+                           accept=".txt,.csv,text/plain,text/csv" required>
+                    <p class="input-help">예: 5,3,1,4,2 또는 줄바꿈으로 구분한 숫자. 정수 1~30개, 최대 16KB. CSV 헤더는 지원하지 않습니다.</p>
+                </div>
+                <button type="submit" class="start-btn upload-btn">↥ 파일에서 불러오기</button>
             </form>
         </section>
     </main>

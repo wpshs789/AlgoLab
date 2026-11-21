@@ -266,3 +266,20 @@ a { color: inherit; }
         @media (prefers-reduced-motion: reduce) {
             .viz-slot { transition: none; }
         }
+
+/* 파일 업로드 화면: 메인 입력폼과 별도 제출 */
+.upload-panel { margin-top: 22px; }
+.upload-panel h2 { font-size: 21px; margin-bottom: 12px; }
+.upload-desc { margin-bottom: 22px; }
+.upload-panel form { width: min(100%, 850px); }
+.upload-panel .form-group { margin-bottom: 18px; }
+.upload-panel input[type="file"] { cursor: pointer; padding: 12px; }
+.upload-panel input[type="file"]::file-selector-button {
+    background: #1e3a55; color: #e0f2fe; border: 1px solid #315b77;
+    border-radius: 7px; padding: 7px 11px; margin-right: 14px; cursor: pointer;
+}
+.upload-message { border-radius: 9px; padding: 13px 16px; font-size: 14px; line-height: 1.6; }
+.upload-message.success { color: #a7f3d0; background: #0f302c; border: 1px solid #266c54; }
+.upload-message.error { color: #fecaca; background: #3a1926; border: 1px solid #804355; }
+.upload-btn { background: #1d4e70; border: 1px solid #3b7093; }
+.upload-btn:hover { background: #245f88; }

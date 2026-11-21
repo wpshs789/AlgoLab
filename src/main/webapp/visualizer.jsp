@@ -25,6 +25,9 @@
             inputArray[i] = Integer.parseInt(tokens[i].trim());
         }
         steps = new SortingService().sort(algorithm, inputArray);
+        // 성공적으로 실행된 배열은 같은 세션의 메인 화면에 다시 표시한다.
+        String normalizedInput = Arrays.toString(inputArray);
+        session.setAttribute("lastNumbers", normalizedInput.substring(1, normalizedInput.length() - 1));
     } catch (NumberFormatException ex) {
         error = "쉼표(,)로 구분된 정수만 입력해주세요.";
     } catch (IllegalArgumentException ex) {
