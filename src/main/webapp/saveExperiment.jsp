@@ -4,7 +4,13 @@
 <%
     Experiment pending = (Experiment) session.getAttribute("pendingExperiment");
     String saveError = (String) session.getAttribute("saveError");
+    String saveDraftTitle = (String) session.getAttribute("saveDraftTitle");
+    String saveDraftMemo = (String) session.getAttribute("saveDraftMemo");
     session.removeAttribute("saveError");
+    session.removeAttribute("saveDraftTitle");
+    session.removeAttribute("saveDraftMemo");
+    if (saveDraftTitle == null) saveDraftTitle = "";
+    if (saveDraftMemo == null) saveDraftMemo = "";
     String csrf = "";
     if (pending != null) {
         byte[] nonce = new byte[24];
@@ -51,11 +57,12 @@
                     <input type="hidden" name="csrf" value="<%= csrf %>">
                     <div class="experiment-field">
                         <label for="title">실험 제목 <span>(필수, 100자 이내)</span></label>
-                        <input id="title" name="title" type="text" maxlength="100" placeholder="예: 역순 배열에서 버블 정렬" required>
+                        <input id="title" name="title" type="text" maxlength="100" placeholder="예: 역순 배열에서 버블 정렬" value="<%= HtmlUtil.escape(saveDraftTitle) %>" required>
+                        <p class="experiment-hint">이미 등록된 실험 제목은 사용할 수 없습니다.</p>
                     </div>
                     <div class="experiment-field">
                         <label for="memo">실험 메모 <span>(2,000자 이내)</span></label>
-                        <textarea id="memo" name="memo" maxlength="2000" rows="6" placeholder="이번 실험에서 관찰한 내용을 입력해 주세요."></textarea>
+                        <textarea id="memo" name="memo" maxlength="2000" rows="6" placeholder="이번 실험에서 관찰한 내용을 입력해 주세요."><%= HtmlUtil.escape(saveDraftMemo) %></textarea>
                     </div>
                     <p class="experiment-hint">배열과 연산 횟수는 서버에서 계산하므로 직접 수정할 수 없습니다. 현재 저장된 기록은 로그인 없이 조회할 수 있습니다.</p>
                     <div class="experiment-actions">

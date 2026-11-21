@@ -20,6 +20,18 @@ public class ExperimentDAO {
         this.application = application;
     }
 
+    /** 실험 제목 중복 여부를 JDBC로 확인한다. 최종 중복 방지는 DB UNIQUE 제약조건이 담당한다. */
+    public boolean existsByTitle(String title) throws SQLException {
+        String sql = "SELECT 1 FROM experiments WHERE title = ? LIMIT 1";
+        try (Connection conn = DBConnection.getConnection(application);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, title);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
     public long insert(Experiment experiment) throws SQLException {
         String sql = "INSERT INTO experiments "
             + "(experiment_type, title, algorithm, input_array, array_size, comparisons, swaps, memo) "

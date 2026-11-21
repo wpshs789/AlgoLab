@@ -74,7 +74,7 @@
                           onsubmit="return confirm('실험 기록을 삭제하시겠습니까? 삭제된 기록은 복구할 수 없습니다.');">
                         <input type="hidden" name="csrf" value="<%= deleteCsrf %>">
                         <input type="hidden" name="id" value="<%= record.getId() %>">
-                        <button class="experiment-danger" type="submit">실험 기록 삭제</button>
+                        <button class="experiment-danger" type="submit">삭제</button>
                     </form>
                 </div>
                 <p class="experiment-deletion-note">삭제된 실험 기록은 복구할 수 없습니다.</p>

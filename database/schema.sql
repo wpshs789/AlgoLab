@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS experiments (
     swaps BIGINT NOT NULL DEFAULT 0,
     memo TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_experiments_title UNIQUE (title),
     INDEX idx_experiments_algorithm (algorithm),
     INDEX idx_experiments_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
