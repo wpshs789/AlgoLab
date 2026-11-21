@@ -283,3 +283,10 @@ a { color: inherit; }
 .upload-message.error { color: #fecaca; background: #3a1926; border: 1px solid #804355; }
 .upload-btn { background: #1d4e70; border: 1px solid #3b7093; }
 .upload-btn:hover { background: #245f88; }
+
+/* 시각화 결과 저장 CTA */
+.save-callout { margin-top: 28px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+.save-callout h2 { font-size: 20px; margin: 0 0 8px; }
+.save-callout .subtitle { margin: 0; }
+.save-link { display: inline-block; text-decoration: none; color: #fff; background: #0284c7; border-radius: 9px; padding: 12px 18px; font-weight: 700; font-size: 14px; white-space: nowrap; }
+.save-link:hover { background: #0369a1; }

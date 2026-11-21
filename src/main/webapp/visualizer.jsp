@@ -3,6 +3,7 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="com.algolab.dto.SortStep" %>
 <%@ page import="com.algolab.service.SortingService" %>
+<%@ page import="com.algolab.service.ExperimentService" %>
 <%
     request.setCharacterEncoding("UTF-8");
 
@@ -11,6 +12,8 @@
     int[] inputArray = null;
     List<SortStep> steps = null;
     String error = null;
+    // 다른 입력을 시도했다면 오래된 실험 기록이 저장되지 않도록 초기화한다.
+    session.removeAttribute("pendingExperiment");
 
     try {
         if (numbers == null || numbers.trim().isEmpty()) {
@@ -25,6 +28,9 @@
             inputArray[i] = Integer.parseInt(tokens[i].trim());
         }
         steps = new SortingService().sort(algorithm, inputArray);
+        // 비교/교환 횟수는 브라우저가 아닌 Java에서 집계해서 세션에 보관한다.
+        session.setAttribute("pendingExperiment",
+                ExperimentService.fromVisualization(algorithm, inputArray, steps));
         // 성공적으로 실행된 배열은 같은 세션의 메인 화면에 다시 표시한다.
         String normalizedInput = Arrays.toString(inputArray);
         session.setAttribute("lastNumbers", normalizedInput.substring(1, normalizedInput.length() - 1));
@@ -117,6 +123,13 @@
                 <div class="stat-card"><p>비교 횟수</p><h3 id="compareCount">0</h3></div>
                 <div class="stat-card"><p>교환 횟수</p><h3 id="swapCount">0</h3></div>
                 <div class="stat-card"><p>현재 단계</p><h3 id="currentStep">0</h3></div>
+            </section>
+            <section class="save-callout panel">
+                <div>
+                    <h2>실험 결과를 저장하시겠습니까?</h2>
+                    <p class="subtitle">입력 배열과 서버에서 계산한 비교·교환 횟수를 실험 기록에 저장할 수 있습니다.</p>
+                </div>
+                <a class="save-link" href="<%= request.getContextPath() %>/saveExperiment.jsp">✎ 실험 기록 저장</a>
             </section>
             <div class="bottom-nav"><a class="back-link" href="index.jsp">← 다른 배열 입력하기</a></div>
 

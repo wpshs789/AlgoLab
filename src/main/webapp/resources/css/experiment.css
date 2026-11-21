@@ -1,0 +1,68 @@
+/* AlgoLab 실험 저장 폼 / DB 상세 화면 */
+.experiment-container { max-width: 960px; }
+.experiment-panel { padding: 28px; }
+.experiment-panel h2 { margin: 0 0 18px; font-size: 22px; }
+.experiment-preview {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px; margin: 10px 0 24px;
+}
+.experiment-preview > div {
+    background: #0b1425; border: 1px solid #293750; border-radius: 10px;
+    padding: 16px; min-width: 0;
+}
+.experiment-preview span { display: block; color: #94a3b8; font-size: 12px; margin-bottom: 10px; }
+.experiment-preview strong { font-size: 19px; color: #f8fafc; overflow-wrap: anywhere; }
+.experiment-array { background: #0c1829; border: 1px solid #293750; border-radius: 10px;
+    padding: 17px; color: #e2e8f0; overflow-wrap: anywhere; }
+.experiment-array span { display: block; color: #94a3b8; font-size: 12px; margin-bottom: 8px; }
+.experiment-form { margin-top: 26px; }
+.experiment-field { display: flex; flex-direction: column; gap: 9px; margin-bottom: 22px; }
+.experiment-field label { font-size: 14px; color: #e2e8f0; font-weight: 600; }
+.experiment-field label span { font-size: 12px; font-weight: 400; color: #94a3b8; }
+.experiment-field input, .experiment-field textarea {
+    padding: 13px 15px; font: inherit; font-size: 15px; line-height: 1.55;
+    background: #0b1425; color: #f8fafc; border: 1px solid #35435d; border-radius: 9px;
+    width: 100%; box-sizing: border-box;
+}
+.experiment-field input:focus, .experiment-field textarea:focus { outline: 2px solid #38bdf8; outline-offset: 2px; }
+.experiment-field textarea { resize: vertical; }
+.experiment-hint { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+.experiment-actions { display: flex; gap: 12px; align-items: center; justify-content: flex-end; flex-wrap: wrap; margin-top: 25px; }
+.experiment-actions form { margin: 0; }
+.experiment-primary, .save-link {
+    display: inline-block; text-decoration: none; border-radius: 9px; background: #0284c7; color: #fff;
+    border: 0; padding: 12px 20px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.experiment-primary:hover, .save-link:hover { background: #0369a1; }
+.experiment-ghost { display: inline-block; color: #cbd5e1; text-decoration: none; padding: 12px 16px;
+    border: 1px solid #334155; background: #152337; border-radius: 9px; }
+.experiment-ghost:hover { background: #1d304a; }
+.experiment-alert { background: #401b29; border: 1px solid #864055; color: #fecaca;
+    padding: 14px 16px; border-radius: 9px; margin-bottom: 25px; }
+.experiment-detail-head { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: baseline; margin-bottom: 12px; }
+.experiment-detail-head span { color: #94a3b8; font-size: 12px; }
+.experiment-section { margin-top: 22px; }
+.experiment-section h3 { color: #cbd5e1; font-size: 14px; margin: 0 0 10px; }
+.experiment-code { padding: 16px; background: #0b1425; border: 1px solid #263750; border-radius: 9px;
+    color: #e2e8f0; font-family: ui-monospace, Consolas, monospace; overflow-wrap: anywhere; }
+.experiment-memo { padding: 16px; background: #0b1425; border: 1px solid #263750; border-radius: 9px;
+    color: #e2e8f0; min-height: 80px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+@media (max-width: 730px) {
+    .experiment-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .experiment-panel { padding: 20px; }
+    .experiment-actions { justify-content: stretch; }
+    .experiment-primary, .experiment-ghost { text-align: center; }
+}
+@media (max-width: 370px) { .experiment-preview { grid-template-columns: 1fr; } }
+
+/* 삭제 버튼은 주요 동작과 구분되는 위험 색상으로 표시합니다. */
+.experiment-danger {
+    display: inline-block; cursor: pointer; padding: 12px 16px;
+    font: inherit; font-size: 14px; font-weight: 700;
+    border: 1px solid #9f364c; border-radius: 9px;
+    background: #4a1d2b; color: #fecaca;
+}
+.experiment-danger:hover, .experiment-danger:focus-visible {
+    background: #842d42; color: #fff; outline-offset: 2px;
+}
+.experiment-deletion-note { margin: 14px 0 0; font-size: 12px; color: #94a3b8; text-align: right; }

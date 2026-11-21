@@ -1,0 +1,119 @@
+/* 실험 기록 게시판: MySQL 조회 및 삭제 */
+.header nav { display: flex; align-items: center; gap: 24px; }
+.history-container { max-width: 1150px; }
+.history-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+.history-heading .page-heading { margin-bottom: 0; }
+.history-main-action {
+    text-decoration: none; color: #fff; background: #0284c7; border-radius: 10px;
+    font-size: 14px; font-weight: 700; padding: 13px 18px; white-space: nowrap;
+}
+.history-main-action:hover { background: #0369a1; }
+.history-notice {
+    display: flex; align-items: flex-start; gap: 12px; margin-top: 29px;
+    border: 1px solid #315b77; background: #102839; border-radius: 12px;
+    padding: 15px 18px; color: #b8dcf0; font-size: 13px; line-height: 1.6;
+}
+.history-notice strong { color: #e0f2fe; }
+.history-dot { flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; margin-top: 6px; }
+.history-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 17px; margin: 23px 0; }
+.history-summary-card {
+    border: 1px solid #243247; border-radius: 13px; background: #111c30; padding: 23px 25px;
+}
+.history-summary-card p { color: #94a3b8; font-size: 13px; margin: 0 0 13px; }
+.history-summary-card strong { color: #f8fafc; font-size: 29px; font-weight: 700; }
+.history-summary-card strong span { color: #94a3b8; font-size: 14px; font-weight: 500; }
+.history-summary-card .history-status-text { color: #7dd3fc; font-size: 22px; }
+.history-board { padding: 28px 0 0; overflow: hidden; }
+.history-board-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 15px; padding: 0 27px 22px; }
+.history-board-heading .eyebrow { font-size: 10px; margin-bottom: 9px; }
+.history-board-heading h2 { font-size: 22px; }
+.history-count { color: #94a3b8; font-size: 13px; }
+.history-search {
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding: 0 27px 24px;
+}
+.history-field { display: flex; flex-direction: column; gap: 8px; min-width: 150px; }
+.history-keyword { flex: 1 1 230px; }
+.history-field label { color: #cbd5e1; font-size: 12px; font-weight: 600; }
+.history-field input, .history-field select {
+    width: 100%; min-height: 43px; border: 1px solid #334155; border-radius: 9px;
+    background: #0b1425; color: #f1f5f9; font: inherit; font-size: 14px; padding: 9px 12px;
+}
+.history-field input::placeholder { color: #64748b; }
+.history-field input:focus, .history-field select:focus { outline: 2px solid #38bdf8; outline-offset: 1px; }
+.history-search-btn {
+    height: 43px; padding: 0 21px; border-radius: 9px; color: #fff; border: none;
+    background: #0284c7; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.history-search-btn:hover { background: #0369a1; }
+.history-table-scroll { width: 100%; overflow-x: auto; }
+.history-table { border-collapse: collapse; width: 100%; min-width: 880px; table-layout: auto; }
+.history-table th {
+    padding: 15px 16px; text-align: left; color: #94a3b8; font-size: 12px;
+    white-space: nowrap; background: #0c1829; border-top: 1px solid #243247; border-bottom: 1px solid #243247;
+}
+.history-table td {
+    padding: 18px 16px; font-size: 13px; border-bottom: 1px solid #1d2a3f;
+    color: #cbd5e1; vertical-align: top; white-space: nowrap;
+}
+.history-table tbody tr:hover { background: #17263a; }
+.history-id { color: #64748b !important; }
+.history-title-cell { min-width: 220px; max-width: 310px; white-space: normal !important; }
+.history-details summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    color: #f1f5f9; font-weight: 700; cursor: pointer; list-style: none;
+}
+.history-details summary::-webkit-details-marker { display: none; }
+.history-details summary span { font-size: 11px; color: #7dd3fc; font-weight: 500; white-space: nowrap; }
+.history-details[open] summary { color: #7dd3fc; }
+.history-detail-content {
+    margin-top: 15px; padding: 15px; border-radius: 9px; background: #0b1425;
+    border: 1px solid #263a50; line-height: 1.65; white-space: normal;
+}
+.history-detail-content p { margin: 0 0 9px; font-weight: 400; overflow-wrap: anywhere; }
+.history-detail-content b { color: #94a3b8; font-size: 12px; display: block; margin-bottom: 3px; }
+.history-detail-content code { color: #e2e8f0; font-size: 12px; }
+.history-detail-content .history-soon { color: #94a3b8; font-size: 12px; margin-top: 10px; }
+.history-replay-form { margin-top: 14px; }
+.history-replay-form button {
+    background: #123c59; border: 1px solid #285d7e; border-radius: 7px; color: #bae6fd;
+    padding: 9px 11px; cursor: pointer; font-size: 12px; font-weight: 600;
+}
+.history-replay-form button:hover { background: #194f73; }
+.history-algo { display: inline-block; border-radius: 8px; padding: 6px 9px; background: #123149; color: #7dd3fc; font-size: 12px; font-weight: 600; }
+.history-algo-selection { background: #1d2a47; color: #a5b4fc; }
+.history-algo-insertion { background: #263147; color: #e9c46a; }
+.history-algo-merge { background: #173a35; color: #86efac; }
+.history-number { color: #e2e8f0 !important; font-variant-numeric: tabular-nums; }
+.history-date { color: #94a3b8 !important; }
+.history-empty { text-align: center; padding: 55px 15px !important; color: #94a3b8 !important; }
+.history-footer-note { padding: 17px 27px 20px; color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 0; }
+@media (max-width: 768px) {
+    .header nav { gap: 13px; }
+    .history-heading { align-items: flex-start; }
+    .history-main-action { width: 100%; text-align: center; }
+    .history-summary { grid-template-columns: 1fr; gap: 10px; }
+    .history-summary-card { padding: 18px 20px; }
+    .history-board-heading { padding-left: 18px; padding-right: 18px; }
+    .history-search { padding: 0 18px 19px; }
+    .history-field { flex: 1 1 150px; min-width: 0; }
+    .history-keyword { flex: 1 1 100%; }
+    .history-search-btn { width: 100%; }
+}
+
+/* 실제 DB에 저장된 실험의 상세 화면 링크 */
+.history-title-link { font-weight: 700; color: #f1f5f9; text-decoration: none; }
+.history-title-link:hover, .history-title-link:focus { text-decoration: underline; color: #7dd3fc; }
+
+/* 실험 기록 삭제: POST 폼과 명확한 삭제 버튼 */
+.history-manage { text-align: center; }
+.history-manage form { margin: 0; }
+.history-delete-button {
+    cursor: pointer; font: inherit; font-size: 12px; font-weight: 600;
+    color: #fda4af; border: 1px solid #7f3548; background: #301925;
+    border-radius: 7px; padding: 7px 11px; white-space: nowrap;
+}
+.history-delete-button:hover, .history-delete-button:focus-visible {
+    color: #fff; background: #8f2740; outline-offset: 2px;
+}
+.history-notice-success { border-color: #245b52; background: #0c2929; color: #b4f7e1; }
+.history-notice-error { border-color: #864055; background: #401b29; color: #fecaca; }

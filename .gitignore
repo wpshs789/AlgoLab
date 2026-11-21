@@ -1,19 +1,14 @@
-# Eclipse workspace
+# AlgoLab - files kept local
 .metadata/
-
-# Compiled files
 bin/
 target/
 build/
 *.class
-
-# Logs
 *.log
-
-# Local environment
 .env
 .env.local
-
-# OS
 .DS_Store
 Thumbs.db
+
+# Database credentials (NEVER commit)
+/src/main/webapp/WEB-INF/db.properties

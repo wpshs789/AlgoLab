@@ -38,7 +38,7 @@
                         return;
                     }
                     if (steps[0].array.some((v, i) => v !== original[i])) {
-                        fail("Java가 전달한 초기 배열과 사용자가 입력한 배열이 서로 다릅니다. SortStep의 clone()과 서버 재배포를 확인하세요.");
+                        fail("시각화 데이터가 입력 배열과 일치하지 않습니다. 페이지를 새로고침하거나 관리자에게 문의해 주세요.");
                         return;
                     }
 
