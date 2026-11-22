@@ -17,7 +17,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>AlgoLab - 알고리즘 시각화</title>
-    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261116b">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261122navfix">
 </head>
 <body>
     <jsp:include page="menu.jsp" />
@@ -25,7 +25,7 @@
         <div class="page-heading">
             <p class="eyebrow">ALGORITHM LABORATORY</p>
             <h1>알고리즘 시각화 학습 플랫폼</h1>
-            <p class="subtitle">배열을 입력하고 버블·선택·삽입 정렬의 동작 과정을 단계별로 확인할 수 있습니다.</p>
+            <p class="subtitle">배열을 입력하고 버블·선택·삽입·병합·퀵 정렬의 동작 과정을 단계별로 확인할 수 있습니다.</p>
         </div>
         <section class="panel input-panel">
             <h2>알고리즘 실행</h2>
@@ -36,6 +36,8 @@
                         <option value="bubble">Bubble Sort</option>
                         <option value="selection">Selection Sort</option>
                         <option value="insertion">Insertion Sort</option>
+                        <option value="merge">Merge Sort</option>
+                        <option value="quick">Quick Sort</option>
                     </select>
                 </div>
                 <div class="form-group">

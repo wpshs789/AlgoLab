@@ -18,6 +18,8 @@ a { color: inherit; }
     border-bottom: 1px solid #1e293b;
 }
 .logo { font-size: 26px; font-weight: bold; text-decoration: none; }
+/* 메뉴 간격을 모든 페이지에서 동일하게 적용합니다. */
+.header nav { display: flex; align-items: center; gap: 24px; }
 .logo span, .eyebrow { color: #38bdf8; }
 .header nav a { color: #94a3b8; text-decoration: none; font-size: 14px; }
 .header nav a:hover { color: #38bdf8; }
@@ -176,6 +178,7 @@ a { color: inherit; }
 .error-panel p { color: #cbd5e1; margin: 0 0 20px; }
 @media (max-width: 768px) {
     .header { padding: 0 5%; }
+    .header nav { gap: 13px; }
     .container { margin: 34px auto; }
     .panel { padding: 19px; }
     .visualizer-area { height: 280px; padding: 14px 7px 36px; }

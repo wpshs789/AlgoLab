@@ -83,6 +83,7 @@
 .history-algo-selection { background: #1d2a47; color: #a5b4fc; }
 .history-algo-insertion { background: #263147; color: #e9c46a; }
 .history-algo-merge { background: #173a35; color: #86efac; }
+.history-algo-quick { background: #38254a; color: #e9d5ff; }
 .history-number { color: #e2e8f0 !important; font-variant-numeric: tabular-nums; }
 .history-date { color: #94a3b8 !important; }
 .history-empty { text-align: center; padding: 55px 15px !important; color: #94a3b8 !important; }

@@ -20,8 +20,10 @@ public final class ExperimentService {
         for (SortStep step : steps) {
             if ("compare".equals(step.getAction())) comparisons++;
             // 삽입 정렬의 shift 1회는 오른쪽으로 원소를 1칸 옮기는 동작입니다.
-            // 기존 DB의 swaps 컬럼에는 알고리즘별 교환/이동 횟수를 저장합니다.
-            if ("swap".equals(step.getAction()) || "shift".equals(step.getAction())) swaps++;
+            // 기존 DB의 swaps 컬럼에는 알고리즘별 교환/이동/병합 배치 횟수를 저장합니다.
+            if ("swap".equals(step.getAction()) || "shift".equals(step.getAction())
+                    || "mergeTake".equals(step.getAction())
+                    || "swapPivot".equals(step.getAction())) swaps++;
         }
 
         StringJoiner numbers = new StringJoiner(",");

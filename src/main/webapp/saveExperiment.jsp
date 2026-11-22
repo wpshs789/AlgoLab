@@ -50,7 +50,7 @@
                     <div><span>알고리즘</span><strong><%= HtmlUtil.escape(pending.getAlgorithmLabel()) %></strong></div>
                     <div><span>배열 크기</span><strong><%= pending.getArraySize() %></strong></div>
                     <div><span>비교 횟수</span><strong><%= pending.getComparisons() %></strong></div>
-                    <div><span><%= "insertion".equals(pending.getAlgorithm()) ? "이동 횟수" : "교환 횟수" %></span><strong><%= pending.getSwaps() %></strong></div>
+                    <div><span><%= "insertion".equals(pending.getAlgorithm()) ? "이동 횟수" : "merge".equals(pending.getAlgorithm()) ? "병합 배치 횟수" : "교환 횟수" %></span><strong><%= pending.getSwaps() %></strong></div>
                 </div>
                 <p class="experiment-array"><span>입력 배열</span> [<%= HtmlUtil.escape(pending.getInputArray()) %>]</p>
                 <form method="post" action="<%= request.getContextPath() %>/saveExperimentProcess.jsp" class="experiment-form">

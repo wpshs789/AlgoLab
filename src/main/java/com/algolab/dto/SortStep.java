@@ -17,6 +17,13 @@ public class SortStep {
     private final int holeIndex;
     private final int sortedEnd;
 
+    // 병합 정렬용 구간(양 끝 포함), 깊이, 임시 병합 결과.
+    private final int rangeLeft;
+    private final int rangeMid;
+    private final int rangeRight;
+    private final int depth;
+    private final int[] mergeOutput;
+
     /** 버블/선택 정렬 등 기존 호출과 호환됩니다. */
     public SortStep(int[] array, int index1, int index2, String action) {
         this(array, index1, index2, action, 0, -1, -1, -1);
@@ -25,6 +32,14 @@ public class SortStep {
     /** 삽입 정렬의 선택한 key, 빈자리, 정렬 완료 구간을 기록합니다. */
     public SortStep(int[] array, int index1, int index2, String action,
                     int keyValue, int keyOrigin, int holeIndex, int sortedEnd) {
+        this(array, index1, index2, action, keyValue, keyOrigin, holeIndex, sortedEnd,
+                -1, -1, -1, -1, new int[0]);
+    }
+
+    /** 병합 정렬의 분할 구간과 부분적으로 채워진 병합 결과를 기록합니다. */
+    public SortStep(int[] array, int index1, int index2, String action,
+                    int keyValue, int keyOrigin, int holeIndex, int sortedEnd,
+                    int rangeLeft, int rangeMid, int rangeRight, int depth, int[] mergeOutput) {
         this.array = array.clone();
         this.index1 = index1;
         this.index2 = index2;
@@ -33,6 +48,11 @@ public class SortStep {
         this.keyOrigin = keyOrigin;
         this.holeIndex = holeIndex;
         this.sortedEnd = sortedEnd;
+        this.rangeLeft = rangeLeft;
+        this.rangeMid = rangeMid;
+        this.rangeRight = rangeRight;
+        this.depth = depth;
+        this.mergeOutput = mergeOutput.clone();
     }
 
     public int[] getArray() { return array.clone(); }
@@ -43,4 +63,9 @@ public class SortStep {
     public int getKeyOrigin() { return keyOrigin; }
     public int getHoleIndex() { return holeIndex; }
     public int getSortedEnd() { return sortedEnd; }
+    public int getRangeLeft() { return rangeLeft; }
+    public int getRangeMid() { return rangeMid; }
+    public int getRangeRight() { return rangeRight; }
+    public int getDepth() { return depth; }
+    public int[] getMergeOutput() { return mergeOutput.clone(); }
 }

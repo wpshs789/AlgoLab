@@ -19,8 +19,9 @@
     const swapCount = document.getElementById("swapCount");
     const currentStep = document.getElementById("currentStep");
     const isInsertion = root.dataset.algorithm === "insertion";
+    const isQuick = root.dataset.algorithm === "quick";
     // 배포 확인용 버전: 브라우저 콘솔에서 document.getElementById("vizRoot").dataset.jsVersion 로 조회 가능합니다.
-    root.dataset.jsVersion = "insertion-one-jump-v2";
+    root.dataset.jsVersion = isQuick ? "quick-v1" : "insertion-one-jump-v2";
 
     function fail(message) {
         warning.textContent = message;
@@ -60,6 +61,16 @@
     zeroLine.style.bottom = `${baseline}%`;
     plot.appendChild(zeroLine);
 
+    // 퀵 정렬은 현재 재귀 구간에 옅은 경계를 표시합니다.
+    let quickBand = null;
+    if (isQuick) {
+        plot.parentElement.classList.add("quick-mode");
+        quickBand = document.createElement("div");
+        quickBand.className = "quick-range-band";
+        quickBand.hidden = true;
+        plot.appendChild(quickBand);
+    }
+
     // 각 원소에 고유 DOM 요소를 부여합니다. shift 때는 DOM 자체가 오른쪽으로 움직입니다.
     const views = original.map((_, i) => {
         const slot = document.createElement("div");
@@ -71,6 +82,14 @@
         const valueLabel = document.createElement("span");
         valueLabel.className = "viz-value";
         slot.append(bar, valueLabel);
+        if (isQuick) {
+            const marker = document.createElement("span");
+            marker.className = "quick-pivot-marker";
+            marker.textContent = "P";
+            marker.setAttribute("aria-label", "피벗");
+            marker.hidden = true;
+            slot.appendChild(marker);
+        }
         plot.appendChild(slot);
         return { slot, bar, valueLabel };
     });
@@ -105,6 +124,8 @@
     const carriedIds = [];
     const compares = [];
     const operations = [];
+    const quickFixed = []; // 각 단계까지 최종 위치가 확정된 피벗/1원소 구간
+    const fixedIndices = new Set();
     const order = Array.from({ length: count }, (_, i) => i);
     let carried = null;
     let numCompares = 0;
@@ -112,7 +133,7 @@
 
     for (const step of steps) {
         const a = step.index1, b = step.index2;
-        if (step.action === "swap") {
+        if (step.action === "swap" || (isQuick && step.action === "swapPivot")) {
             if (!validIndex(a) || !validIndex(b)) {
                 fail("교환 단계의 인덱스가 올바르지 않습니다.");
                 return;
@@ -145,6 +166,26 @@
         }
 
         if (step.action === "compare") numCompares++;
+        if (isQuick) {
+            if (step.action === "quickPlaced" || step.action === "quickSingle") {
+                if (!validIndex(step.index1) || fixedIndices.has(step.index1)) {
+                    fail("퀵 정렬의 위치 확정 정보가 올바르지 않습니다.");
+                    return;
+                }
+                fixedIndices.add(step.index1);
+            }
+            for (let pos = 0; pos < count; pos++) {
+                if (original[order[pos]] !== step.array[pos]) {
+                    fail("퀵 정렬의 교환 결과가 올바르지 않습니다.");
+                    return;
+                }
+            }
+            if (step.action === "complete" && fixedIndices.size !== count) {
+                fail("퀵 정렬에서 모든 위치가 확정되지 않았습니다.");
+                return;
+            }
+            quickFixed.push(new Set(fixedIndices));
+        }
         if (isInsertion) {
             // 빈자리 이외의 각 막대가 실제 원래 값과 일치하는지 확인합니다.
             for (let pos = 0; pos < count; pos++) {
@@ -220,6 +261,16 @@
         if (step.action === "initial") return isInsertion
             ? "첫 번째 원소는 정렬된 상태입니다. 재생을 눌러 시작하세요."
             : "초기 배열 — 재생을 눌러 시작하세요.";
+        if (isQuick) {
+            if (step.action === "quickStart") return `${step.left + 1}~${step.right + 1}번째 구간에서 맨 오른쪽 값 ${step.array[step.right]}을 피벗으로 선택합니다.`;
+            if (step.action === "compare") return `${step.index1 + 1}번째 값 ${step.array[step.index1]}과 피벗 ${step.array[step.right]}을 비교합니다.`;
+            if (step.action === "quickKeep") return `${step.array[step.index1]}은 피벗 이하이며 이미 왼쪽 그룹에 있습니다. 경계를 한 칸 옮깁니다.`;
+            if (step.action === "quickSkip") return `${step.array[step.index1]}은 피벗보다 큽니다. 오른쪽 그룹에 남겨 둡니다.`;
+            if (step.action === "swap") return `${step.index1 + 1}번째와 ${step.index2 + 1}번째 값을 교환해 피벗 이하 원소를 왼쪽 그룹에 배치합니다.`;
+            if (step.action === "swapPivot") return `피벗 ${step.array[step.index1]}을 ${step.index1 + 1}번째 위치로 옮깁니다.`;
+            if (step.action === "quickPlaced") return `피벗 ${step.array[step.index1]}의 위치가 ${step.index1 + 1}번째로 확정되었습니다. 양쪽 구간을 각각 정렬합니다.`;
+            if (step.action === "quickSingle") return `${step.index1 + 1}번째 원소 ${step.array[step.index1]}만 남은 구간은 이미 정렬되어 있습니다.`;
+        }
         if (step.action === "complete") return "정렬이 완료되었습니다.";
         if (step.action === "pick") return `${step.index1 + 1}번째 원소 ${step.keyValue}을 꺼내 삽입할 위치를 찾습니다.`;
         if (step.action === "compare" && isInsertion) {
@@ -259,6 +310,21 @@
             motionDuration() > 0;
         const enteringId = landing ? carriedIds[visibleSteps[index - 1]] : null;
 
+        // 현재 분할의 피벗은 기존에 고른 맨 오른쪽 원소이며,
+        // 피벗을 교환한 후에는 확정된 위치(index1)에 있습니다.
+        const activeQuick = isQuick && Number.isInteger(step.left) &&
+            step.left >= 0 && step.right >= step.left && step.right < count;
+        const pivotPos = activeQuick ?
+            (["swapPivot", "quickPlaced", "quickSingle"].includes(step.action) ? step.index1 : step.right) : -1;
+        const fixedNow = isQuick ? quickFixed[rawIndex] : null;
+
+        if (isQuick) {
+            quickBand.hidden = !activeQuick;
+            if (activeQuick) {
+                quickBand.style.left = `${step.left / count * 100}%`;
+                quickBand.style.width = `${(step.right - step.left + 1) / count * 100}%`;
+            }
+        }
         for (let pos = 0; pos < count; pos++) {
             const id = orderNow[pos];
             if (id === null) continue;
@@ -285,6 +351,22 @@
             view.slot.classList.toggle("selected", step.action === "select" && pos === step.index2);
             view.slot.classList.toggle("fixed", step.action === "fixed" && pos === step.index1);
             view.slot.classList.toggle("inserted", step.action === "insert" && pos === step.index1);
+            if (isQuick) {
+                const fixed = fixedNow.has(pos);
+                view.slot.classList.toggle("quick-outside", activeQuick &&
+                    (pos < step.left || pos > step.right) && !fixed);
+                view.slot.classList.toggle("quick-left", activeQuick && !fixed &&
+                    pos >= step.left && pos <= step.mid && pos !== pivotPos);
+                view.slot.classList.toggle("quick-pivot", activeQuick && pos === pivotPos &&
+                    step.action !== "quickSingle" && step.action !== "quickPlaced");
+                view.slot.classList.toggle("quick-scan", activeQuick &&
+                    ["compare", "quickKeep", "quickSkip"].includes(step.action) && pos === step.index1);
+                view.slot.classList.toggle("quick-moving", activeQuick &&
+                    ["swap", "swapPivot"].includes(step.action) &&
+                    (pos === step.index1 || pos === step.index2));
+                view.slot.classList.toggle("quick-fixed", fixed);
+                view.slot.querySelector(".quick-pivot-marker").hidden = pos !== pivotPos;
+            }
         }
         for (let id = 0; id < count; id++) {
             if (!visibleIds.has(id)) views[id].slot.hidden = true;
@@ -322,6 +404,19 @@
             }
         } else {
             currentValues.textContent = `[${step.array.join(", ")}]`;
+        }
+
+        if (isQuick) {
+            const rangeLabel = document.getElementById("quickRange");
+            const pivotLabel = document.getElementById("quickPivot");
+            const leftLabel = document.getElementById("quickLeftGroup");
+            rangeLabel.textContent = activeQuick ? `${step.left + 1} ~ ${step.right + 1}번째` : "전체 배열";
+            pivotLabel.textContent = activeQuick ? `${step.array[pivotPos]} (${pivotPos + 1}번째)` :
+                (step.action === "complete" ? "정렬 완료" : "선택 전");
+            const leftLength = activeQuick ? Math.max(0, step.mid - step.left + 1 -
+                (["quickPlaced", "quickSingle"].includes(step.action) ? 1 : 0)) : 0;
+            leftLabel.textContent = activeQuick ? `${leftLength}개` : "-";
+            document.getElementById("quickFixedCount").textContent = `${fixedNow.size}개 / ${count}개`;
         }
 
         actionText.textContent = explain(step);

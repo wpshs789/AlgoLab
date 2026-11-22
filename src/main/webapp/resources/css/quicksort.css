@@ -1,0 +1,26 @@
+/* Quick Sort: 마지막 원소 Pivot 기반 파티션 시각화 */
+.quick-legend { display: flex; flex-wrap: wrap; gap: 10px 19px; margin: 0 0 17px; color: #cbd5e1; font-size: 12px; }
+.quick-legend > span { display: inline-flex; align-items: center; gap: 7px; }
+.quick-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.quick-dot-pivot { background: #c084fc; }
+.quick-dot-scan { background: #fbbf24; }
+.quick-dot-left { background: #38bdf8; }
+.quick-dot-fixed { background: #34d399; }
+.quick-summary { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin-bottom: 10px; }
+.quick-summary > div { display: flex; flex-direction: column; gap: 5px; padding: 13px 14px; background: #0b1425; border: 1px solid #243247; border-radius: 9px; min-width: 0; }
+.quick-summary span { color: #94a3b8; font-size: 12px; }
+.quick-summary strong { color: #f1f5f9; font-size: 15px; overflow-wrap: anywhere; }
+.quick-caption { font-size: 12px; line-height: 1.65; color: #94a3b8; margin: 7px 0 19px; }
+.quick-range-band { position: absolute; top: 0; bottom: 0; z-index: 0; background: rgba(56,189,248,.045); border: 1px dashed rgba(56,189,248,.23); border-radius: 7px; pointer-events: none; transition: left .2s, width .2s; }
+.viz-plot .viz-slot { z-index: 1; }
+.viz-slot.quick-outside .viz-bar { opacity: .24; }
+.viz-slot.quick-left .viz-bar { background: linear-gradient(180deg,#38bdf8,#0369a1); }
+.viz-slot.quick-pivot .viz-bar { background: linear-gradient(180deg,#c084fc,#7e22ce); opacity: 1; }
+.viz-slot.quick-scan .viz-bar { background: linear-gradient(180deg,#fbbf24,#d97706); opacity: 1; }
+.viz-slot.quick-moving .viz-bar { background: linear-gradient(180deg,#fb7185,#e11d48); opacity: 1; }
+.viz-slot.quick-fixed .viz-bar { background: linear-gradient(180deg,#34d399,#059669); opacity: 1; }
+.quick-pivot-marker { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); padding: 3px 7px; border-radius: 6px; font-size: 11px; font-weight: 800; color: #e9d5ff; background: #43215b; border: 1px solid #965ac5; z-index: 2; pointer-events: none; }
+.quick-pivot-marker[hidden] { display: none; }
+@media(max-width:720px) { .quick-summary { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:380px) { .quick-summary > div { padding:10px; } .quick-summary strong { font-size:13px; } }
+@media(prefers-reduced-motion:reduce) { .quick-range-band { transition:none; } }

@@ -4,6 +4,8 @@ import java.util.List;
 import com.algolab.algorithm.BubbleSort;
 import com.algolab.algorithm.SelectionSort;
 import com.algolab.algorithm.InsertionSort;
+import com.algolab.algorithm.MergeSort;
+import com.algolab.algorithm.QuickSort;
 import com.algolab.algorithm.SortingAlgorithm;
 import com.algolab.dto.SortStep;
 
@@ -20,6 +22,10 @@ public class SortingService {
             sorter = new SelectionSort();
         } else if ("insertion".equals(algorithm)) {
             sorter = new InsertionSort();
+        } else if ("merge".equals(algorithm)) {
+            sorter = new MergeSort();
+        } else if ("quick".equals(algorithm)) {
+            sorter = new QuickSort();
         } else {
             throw new IllegalArgumentException("지원하지 않는 알고리즘입니다.");
         }
@@ -29,6 +35,8 @@ public class SortingService {
     public static boolean isSupported(String algorithm) {
         return "bubble".equals(algorithm)
             || "selection".equals(algorithm)
-            || "insertion".equals(algorithm);
+            || "insertion".equals(algorithm)
+            || "merge".equals(algorithm)
+            || "quick".equals(algorithm);
     }
 }

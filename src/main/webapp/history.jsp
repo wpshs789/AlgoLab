@@ -10,7 +10,8 @@
 
     String algorithmFilter = request.getParameter("algorithm");
     if (!"bubble".equals(algorithmFilter) && !"selection".equals(algorithmFilter)
-        && !"insertion".equals(algorithmFilter) && !"merge".equals(algorithmFilter)) {
+        && !"insertion".equals(algorithmFilter) && !"merge".equals(algorithmFilter)
+        && !"quick".equals(algorithmFilter)) {
         algorithmFilter = "all";
     }
     String order = "oldest".equals(request.getParameter("order")) ? "oldest" : "latest";
@@ -91,6 +92,7 @@
                         <option value="selection" <%= "selection".equals(algorithmFilter) ? "selected" : "" %>>Selection Sort</option>
                         <option value="insertion" <%= "insertion".equals(algorithmFilter) ? "selected" : "" %>>Insertion Sort</option>
                         <option value="merge" <%= "merge".equals(algorithmFilter) ? "selected" : "" %>>Merge Sort</option>
+                        <option value="quick" <%= "quick".equals(algorithmFilter) ? "selected" : "" %>>Quick Sort</option>
                     </select>
                 </div>
                 <div class="history-field">
@@ -122,7 +124,7 @@
                                 <td><span class="history-algo history-algo-<%= HtmlUtil.escape(record.getAlgorithm()) %>"><%= HtmlUtil.escape(record.getAlgorithmLabel()) %></span></td>
                                 <td class="history-number"><%= record.getArraySize() %></td>
                                 <td class="history-number"><%= record.getComparisons() %></td>
-                                <td class="history-number" title="<%= "insertion".equals(record.getAlgorithm()) ? "이동 횟수" : "교환 횟수" %>"><%= record.getSwaps() %></td>
+                                <td class="history-number" title="<%= "insertion".equals(record.getAlgorithm()) ? "이동 횟수" : "merge".equals(record.getAlgorithm()) ? "병합 배치 횟수" : "교환 횟수" %>"><%= record.getSwaps() %></td>
                                 <td class="history-date"><%= record.getCreatedAt() == null ? "-" : dateFormat.format(record.getCreatedAt().toLocalDateTime()) %></td>
                                 <td class="history-manage">
                                     <form method="post" action="<%= request.getContextPath() %>/deleteExperimentProcess.jsp"

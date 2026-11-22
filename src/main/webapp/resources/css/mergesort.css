@@ -1,0 +1,113 @@
+/* Merge Sort 시각화 전용. 기존 버블/선택/삽입 정렬의 막대 스타일은 수정하지 않습니다. */
+.merge-legend { display:flex; flex-wrap:wrap; gap:16px; color:#b8c5d7; font-size:13px; margin:14px 0 20px; }
+.merge-legend span { display:inline-flex; align-items:center; gap:7px; }
+.merge-dot { display:inline-block; width:11px; height:11px; border-radius:4px; }
+.dot-current { background:#38bdf8; }
+.dot-ready { background:#4ade80; }
+.dot-split { background:#64748b; }
+.merge-section-heading { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; margin:20px 0 12px; }
+.merge-section-heading h3 { margin:0; font-size:16px; color:#f8fafc; }
+.merge-section-heading span { font-size:12px; color:#94a3b8; }
+.merge-tree-scroll { overflow-x:auto; overflow-y:hidden; border:1px solid #26354c; border-radius:12px; background:#0b1425; padding:20px 12px 14px; scrollbar-color:#465a78 #18243a; }
+.merge-tree-scroll:focus-visible { outline:2px solid #38bdf8; outline-offset:2px; }
+.merge-tree { position:relative; margin:0 auto; }
+.merge-edges { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.merge-edges line { stroke:#465a78; stroke-width:1.6; opacity:0; transition:opacity .18s ease; }
+.merge-edges line.is-visible { opacity:.85; }
+.merge-node { position:absolute; height:74px; padding:0 3px; transition:opacity .15s ease; }
+.merge-node[hidden] { display:none !important; }
+.merge-node::before { content:""; position:absolute; inset:0 3px; border:1px solid #34445b; border-radius:9px; background:#142136; }
+.merge-node.is-partitioned::before { background:#172234; border-color:#526079; }
+.merge-node.is-ready::before { background:#0c2d2b; border-color:#2f9e72; }
+.merge-node.is-current::before { background:#10354f; border-color:#38bdf8; box-shadow:inset 0 0 0 1px #38bdf8; }
+.merge-node-label { position:relative; font-size:11px; letter-spacing:.2px; color:#aebed1; text-align:center; height:22px; padding-top:5px; white-space:nowrap; }
+.merge-node.is-current .merge-node-label { color:#7dd3fc; font-weight:700; }
+.merge-node.is-ready .merge-node-label { color:#86efac; }
+.merge-node-values { position:relative; display:flex; flex-wrap:nowrap; justify-content:center; align-items:center; gap:2px; padding:5px 4px 6px; min-height:40px; overflow:hidden; }
+.merge-node-pill { display:inline-flex; justify-content:center; align-items:center; min-width:0; height:25px; padding:0 3px; flex:1 1 0; font-size:11px; font-weight:700; color:#e2e8f0; background:#263950; border-radius:5px; white-space:nowrap; }
+.merge-node.is-current .merge-node-pill { background:#175378; color:#fff; }
+.merge-node.is-ready .merge-node-pill { background:#17614d; color:#dcfce7; }
+.merge-workbench { margin-top:18px; padding:18px; border:1px solid #2a3b51; background:#0c1627; border-radius:12px; }
+.merge-workbench-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+.merge-workbench-head h3 { font-size:16px; margin:0; }
+.merge-workbench-head span { font-size:12px; color:#7dd3fc; background:#123149; border-radius:20px; padding:6px 10px; }
+.merge-lanes { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
+.merge-lane, .merge-output-lane { min-width:0; padding:12px; border:1px solid #26354c; border-radius:9px; background:#111f32; }
+.merge-lane > span, .merge-output-lane > span { display:block; margin-bottom:10px; font-size:12px; color:#94a3b8; }
+.merge-output-lane { margin-top:10px; background:#10263b; border-color:#225472; }
+.merge-chips { display:flex; gap:5px; flex-wrap:wrap; min-height:36px; align-items:center; }
+.merge-chip { min-width:32px; padding:7px 9px; text-align:center; background:#293d55; color:#e5f0fb; border:1px solid #3a5270; border-radius:8px; font-size:13px; font-weight:700; }
+.merge-chip.is-compared { background:#785d1b; border-color:#eab308; color:#fff0b0; }
+.merge-chip.is-consumed { background:#263347; border-color:#334155; color:#718098; text-decoration:line-through; }
+.merge-output-lane .merge-chip { background:#174e70; border-color:#2784aa; }
+.merge-output-lane .merge-chip.is-compared { background:#196a4e; border-color:#4ade80; color:#dcfce7; }
+.merge-empty { color:#64748b; font-size:14px; }
+.merge-hint { font-size:12px; line-height:1.65; color:#94a3b8; margin:13px 0 0; }
+@media (max-width:640px) {
+    .merge-tree-scroll { padding:13px 8px 8px; }
+    .merge-workbench { padding:12px; }
+    .merge-lanes { grid-template-columns:1fr; }
+    .merge-section-heading span { font-size:11px; }
+}
+@media (prefers-reduced-motion:reduce) {
+    .merge-node,.merge-edges line { transition:none; }
+}
+
+
+/* merge-bars-v2: 병합 중에는 부모 노드의 빈 칸이 실시간으로 채워집니다. */
+.merge-node.is-merging::before { background:#102b42; border-color:#38bdf8; border-style:dashed; }
+.merge-node-pill.is-vacant { background:transparent!important; border:1px dashed #48627d; color:#617790!important; }
+.merge-node-pill.is-placed { background:#155879!important; color:#e0f2fe!important; }
+.merge-node-pill.is-new { background:#18764e!important; color:#ecfdf5!important; box-shadow:inset 0 0 0 1px #4ade80; }
+.merge-node-pill.is-consumed { opacity:.35; text-decoration:line-through; }
+.merge-node-pill.is-compared { background:#8a621a!important; color:#fff3ba!important; outline:1px solid #facc15; opacity:1; text-decoration:none; }
+.merge-node.is-current .merge-node-pill.is-vacant { box-shadow:none; }
+
+/* 값만 나열하던 공간을 동일한 축척의 실제 막대그래프로 변경합니다. */
+.merge-lane, .merge-output-lane { overflow:hidden; }
+.merge-bars {
+    display:flex;
+    gap:5px;
+    align-items:flex-end;
+    min-height:166px;
+    overflow-x:auto;
+    padding:8px 2px 5px;
+    border-bottom:1px solid #3b506a;
+    scrollbar-color:#465a78 #18243a;
+}
+.merge-bar-slot {
+    flex:1 0 26px;
+    min-width:26px;
+    max-width:90px;
+    height:142px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    align-items:stretch;
+    position:relative;
+    gap:5px;
+}
+.merge-bar {
+    flex:none;
+    width:100%;
+    border-radius:5px 5px 2px 2px;
+    background:linear-gradient(165deg,#38bdf8,#2563eb);
+    border:1px solid #60a5fa;
+    transition:height .16s ease, opacity .16s ease, background .16s ease;
+    min-height:4px;
+}
+.merge-bar-value { flex:none; font-size:11px; font-weight:700; color:#e2e8f0; text-align:center; line-height:16px; height:16px; white-space:nowrap; }
+.merge-bar-slot.is-compared .merge-bar { background:linear-gradient(170deg,#facc15,#b45309); border-color:#fde047; }
+.merge-bar-slot.is-consumed .merge-bar { opacity:.23; }
+.merge-bar-slot.is-consumed .merge-bar-value { color:#6d829f; }
+.merge-bar-slot.is-placed .merge-bar { background:linear-gradient(170deg,#22d3ee,#0891b2); border-color:#67e8f9; }
+.merge-bar-slot.is-new .merge-bar { background:linear-gradient(170deg,#4ade80,#059669); border-color:#86efac; box-shadow:0 0 0 2px #1e7e5a; }
+.merge-bar-slot.is-vacant { background:transparent; }
+.merge-bar-placeholder { height:100%; border:1px dashed #41546d; border-radius:6px; opacity:.75; }
+.merge-bars .merge-empty { align-self:center; margin:auto; font-size:12px; }
+.merge-graph-explain { font-size:12px; line-height:1.6; color:#a6bed6; margin:10px 0 0; }
+@media (max-width:640px) {
+    .merge-bars { min-height:148px; }
+    .merge-bar-slot { height:122px; }
+}
+@media (prefers-reduced-motion:reduce) { .merge-bar { transition:none; } }

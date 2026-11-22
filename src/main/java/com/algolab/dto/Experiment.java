@@ -55,6 +55,7 @@ public class Experiment implements Serializable {
         if ("selection".equals(algorithm)) return "Selection Sort";
         if ("insertion".equals(algorithm)) return "Insertion Sort";
         if ("merge".equals(algorithm)) return "Merge Sort";
+        if ("quick".equals(algorithm)) return "Quick Sort";
         return algorithm;
     }
 }

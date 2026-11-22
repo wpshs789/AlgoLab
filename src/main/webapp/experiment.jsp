@@ -51,7 +51,7 @@
                     <div><span>알고리즘</span><strong><%= HtmlUtil.escape(record.getAlgorithmLabel()) %></strong></div>
                     <div><span>배열 크기</span><strong><%= record.getArraySize() %></strong></div>
                     <div><span>비교 횟수</span><strong><%= record.getComparisons() %></strong></div>
-                    <div><span><%= "insertion".equals(record.getAlgorithm()) ? "이동 횟수" : "교환 횟수" %></span><strong><%= record.getSwaps() %></strong></div>
+                    <div><span><%= "insertion".equals(record.getAlgorithm()) ? "이동 횟수" : "merge".equals(record.getAlgorithm()) ? "병합 배치 횟수" : "교환 횟수" %></span><strong><%= record.getSwaps() %></strong></div>
                 </div>
                 <div class="experiment-section"><h3>입력 배열</h3>
                     <div class="experiment-code">[<%= HtmlUtil.escape(record.getInputArray()) %>]</div>
@@ -62,7 +62,8 @@
                 <div class="experiment-actions">
                     <a class="experiment-ghost" href="<%= request.getContextPath() %>/history.jsp">← 목록</a>
                     <% if ("bubble".equals(record.getAlgorithm()) || "selection".equals(record.getAlgorithm())
-                            || "insertion".equals(record.getAlgorithm())) { %>
+                            || "insertion".equals(record.getAlgorithm()) || "merge".equals(record.getAlgorithm())
+                            || "quick".equals(record.getAlgorithm())) { %>
                         <form action="<%= request.getContextPath() %>/visualizer.jsp" method="post">
                             <input type="hidden" name="algorithm" value="<%= HtmlUtil.escape(record.getAlgorithm()) %>">
                             <input type="hidden" name="numbers" value="<%= HtmlUtil.escape(record.getInputArray()) %>">
