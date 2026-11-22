@@ -1,166 +1,375 @@
 (() => {
-                    "use strict";
-                    const root = document.getElementById("vizRoot");
-                    if (!root) return;
-                    const plot = document.getElementById("vizPlot");
-                    const warning = document.getElementById("vizWarning");
-                    const playBtn = document.getElementById("playBtn");
-                    const prevBtn = document.getElementById("prevBtn");
-                    const nextBtn = document.getElementById("nextBtn");
-                    const resetBtn = document.getElementById("resetBtn");
-                    const speed = document.getElementById("speed");
-                    const actionText = document.getElementById("actionText");
-                    const stepText = document.getElementById("stepText");
-                    const currentValues = document.getElementById("currentValues");
-                    const progressBar = document.getElementById("progressBar");
-                    const compareCount = document.getElementById("compareCount");
-                    const swapCount = document.getElementById("swapCount");
-                    const currentStep = document.getElementById("currentStep");
+    "use strict";
 
-                    function fail(message) {
-                        warning.textContent = message;
-                        warning.classList.add("visible");
-                        for (const button of [playBtn, prevBtn, nextBtn, resetBtn]) button.disabled = true;
-                    }
+    const root = document.getElementById("vizRoot");
+    if (!root) return;
 
-                    let steps, original;
-                    try {
-                        steps = JSON.parse(document.getElementById("sortData").textContent);
-                        original = JSON.parse(document.getElementById("inputData").textContent);
-                    } catch (e) {
-                        fail("Java에서 전달한 정렬 데이터를 읽을 수 없습니다. " + e.message);
-                        return;
-                    }
-                    if (!Array.isArray(steps) || steps.length === 0 ||
-                        !Array.isArray(original) || original.length === 0 ||
-                        steps.some(s => !s || !Array.isArray(s.array) || s.array.length !== original.length)) {
-                        fail("정렬 단계 데이터의 형식이 잘못되었습니다.");
-                        return;
-                    }
-                    if (steps[0].array.some((v, i) => v !== original[i])) {
-                        fail("시각화 데이터가 입력 배열과 일치하지 않습니다. 페이지를 새로고침하거나 관리자에게 문의해 주세요.");
-                        return;
-                    }
+    const plot = document.getElementById("vizPlot");
+    const warning = document.getElementById("vizWarning");
+    const playBtn = document.getElementById("playBtn");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const speed = document.getElementById("speed");
+    const actionText = document.getElementById("actionText");
+    const stepText = document.getElementById("stepText");
+    const currentValues = document.getElementById("currentValues");
+    const progressBar = document.getElementById("progressBar");
+    const compareCount = document.getElementById("compareCount");
+    const swapCount = document.getElementById("swapCount");
+    const currentStep = document.getElementById("currentStep");
+    const isInsertion = root.dataset.algorithm === "insertion";
+    // 배포 확인용 버전: 브라우저 콘솔에서 document.getElementById("vizRoot").dataset.jsVersion 로 조회 가능합니다.
+    root.dataset.jsVersion = "insertion-one-jump-v2";
 
-                    const count = original.length;
-                    const max = Math.max(0, ...original);
-                    const min = Math.min(0, ...original);
-                    const range = Math.max(1, max - min);
-                    const baseline = -min / range * 100;
-                    plot.style.minWidth = `${Math.max(0, count * 48)}px`;
-                    const zeroLine = document.createElement("div");
-                    zeroLine.className = "viz-zero";
-                    zeroLine.style.bottom = `${baseline}%`;
-                    plot.appendChild(zeroLine);
+    function fail(message) {
+        warning.textContent = message;
+        warning.classList.add("visible");
+        [playBtn, prevBtn, nextBtn, resetBtn].forEach(button => { button.disabled = true; });
+    }
 
-                    const views = original.map((value, i) => {
-                        const slot = document.createElement("div");
-                        slot.className = "viz-slot";
-                        slot.style.left = `${i / count * 100}%`;
-                        slot.style.width = `${100 / count}%`;
-                        const bar = document.createElement("div");
-                        bar.className = "viz-bar";
-                        const valueLabel = document.createElement("span");
-                        valueLabel.className = "viz-value";
-                        slot.append(bar, valueLabel);
-                        plot.appendChild(slot);
-                        return { slot, bar, valueLabel };
-                    });
+    let steps, original;
+    try {
+        steps = JSON.parse(document.getElementById("sortData").textContent);
+        original = JSON.parse(document.getElementById("inputData").textContent);
+    } catch (e) {
+        fail("Java에서 전달한 정렬 데이터를 읽을 수 없습니다. " + e.message);
+        return;
+    }
 
-                    // 각 원소의 정체성은 swap 기록으로 추적하고, 실제 숫자는 각 step.array에서 가져온다.
-                    const orders = [];
-                    const order = Array.from({ length: count }, (_, i) => i);
-                    const compares = [];
-                    const swaps = [];
-                    let numCompares = 0, numSwaps = 0;
-                    for (const step of steps) {
-                        if (step.action === "swap") {
-                            const a = step.index1, b = step.index2;
-                            if (!Number.isInteger(a) || !Number.isInteger(b) ||
-                                a < 0 || b < 0 || a >= count || b >= count) {
-                                fail("정렬 과정의 swap 인덱스가 잘못되었습니다.");
-                                return;
-                            }
-                            [order[a], order[b]] = [order[b], order[a]];
-                            numSwaps++;
-                        }
-                        if (step.action === "compare") numCompares++;
-                        orders.push([...order]);
-                        compares.push(numCompares);
-                        swaps.push(numSwaps);
-                    }
+    if (!Array.isArray(steps) || steps.length === 0 ||
+        !Array.isArray(original) || original.length === 0 ||
+        steps.some(s => !s || !Array.isArray(s.array) || s.array.length !== original.length)) {
+        fail("정렬 단계 데이터의 형식이 잘못되었습니다.");
+        return;
+    }
+    if (steps[0].array.some((v, i) => v !== original[i])) {
+        fail("시각화 데이터가 입력 배열과 일치하지 않습니다. 페이지를 새로고침해 주세요.");
+        return;
+    }
 
-                    let index = 0;
-                    let timer = null;
-                    function pause() {
-                        if (timer !== null) clearInterval(timer);
-                        timer = null;
-                        playBtn.textContent = "▶ 재생";
+    const count = original.length;
+    const max = Math.max(0, ...original);
+    const min = Math.min(0, ...original);
+    const range = Math.max(1, max - min);
+    const baseline = -min / range * 100;
+    plot.style.minWidth = `${count * 48}px`;
+
+    const zeroLine = document.createElement("div");
+    zeroLine.className = "viz-zero";
+    zeroLine.style.bottom = `${baseline}%`;
+    plot.appendChild(zeroLine);
+
+    // 각 원소에 고유 DOM 요소를 부여합니다. shift 때는 DOM 자체가 오른쪽으로 움직입니다.
+    const views = original.map((_, i) => {
+        const slot = document.createElement("div");
+        slot.className = "viz-slot";
+        slot.style.left = `${i / count * 100}%`;
+        slot.style.width = `${100 / count}%`;
+        const bar = document.createElement("div");
+        bar.className = "viz-bar";
+        const valueLabel = document.createElement("span");
+        valueLabel.className = "viz-value";
+        slot.append(bar, valueLabel);
+        plot.appendChild(slot);
+        return { slot, bar, valueLabel };
+    });
+
+    let hole = null;
+    let keyToken = null;
+    let keyNumber = null;
+    if (isInsertion) {
+        plot.parentElement.classList.add("insertion-mode");
+        hole = document.createElement("div");
+        hole.className = "viz-hole";
+        const holeText = document.createElement("span");
+        holeText.textContent = "빈자리";
+        hole.appendChild(holeText);
+        hole.hidden = true;
+        plot.appendChild(hole);
+
+        keyToken = document.createElement("div");
+        keyToken.className = "viz-key-token";
+        const keyCaption = document.createElement("span");
+        keyCaption.textContent = "삽입할 값 (Key)";
+        keyNumber = document.createElement("strong");
+        keyToken.append(keyCaption, keyNumber);
+        keyToken.hidden = true;
+        plot.appendChild(keyToken);
+    }
+
+    // [위치] -> [원소 ID]. pick 시 key를 꺼내 빈자리를 만들고,
+    // shift 시 원소 ID를 오른쪽으로 실제 이동시키며, insert 시 key ID를 넣습니다.
+    // 이렇게 해야 배열 값만 바꾸었을 때와 달리 '밀려나는' 움직임을 볼 수 있습니다.
+    const orders = [];
+    const carriedIds = [];
+    const compares = [];
+    const operations = [];
+    const order = Array.from({ length: count }, (_, i) => i);
+    let carried = null;
+    let numCompares = 0;
+    let numOperations = 0;
+
+    for (const step of steps) {
+        const a = step.index1, b = step.index2;
+        if (step.action === "swap") {
+            if (!validIndex(a) || !validIndex(b)) {
+                fail("교환 단계의 인덱스가 올바르지 않습니다.");
+                return;
+            }
+            [order[a], order[b]] = [order[b], order[a]];
+            numOperations++;
+        } else if (isInsertion && step.action === "pick") {
+            if (!validIndex(a) || carried !== null || order[a] === null || step.holeIndex !== a) {
+                fail("삽입할 원소를 선택하는 단계가 올바르지 않습니다.");
+                return;
+            }
+            carried = order[a];
+            order[a] = null;
+        } else if (isInsertion && step.action === "shift") {
+            if (!validIndex(a) || !validIndex(b) || carried === null ||
+                order[a] === null || order[b] !== null || step.holeIndex !== a) {
+                fail("원소를 오른쪽으로 이동하는 단계가 올바르지 않습니다.");
+                return;
+            }
+            order[b] = order[a];
+            order[a] = null;
+            numOperations++;
+        } else if (isInsertion && step.action === "insert") {
+            if (!validIndex(a) || carried === null || order[a] !== null || step.holeIndex !== -1) {
+                fail("원소를 삽입하는 단계가 올바르지 않습니다.");
+                return;
+            }
+            order[a] = carried;
+            carried = null;
+        }
+
+        if (step.action === "compare") numCompares++;
+        if (isInsertion) {
+            // 빈자리 이외의 각 막대가 실제 원래 값과 일치하는지 확인합니다.
+            for (let pos = 0; pos < count; pos++) {
+                const id = order[pos];
+                if (id !== null && original[id] !== step.array[pos]) {
+                    fail("삽입 정렬 단계의 배열 값이 올바르지 않습니다.");
+                    return;
+                }
+            }
+            if ((carried === null) !== (step.holeIndex === -1) ||
+                (carried !== null && original[carried] !== step.keyValue)) {
+                fail("삽입 정렬 단계의 빈자리 정보가 올바르지 않습니다.");
+                return;
+            }
+        }
+        orders.push([...order]);
+        carriedIds.push(carried);
+        compares.push(numCompares);
+        operations.push(numOperations);
+    }
+
+    function validIndex(value) {
+        return Number.isInteger(value) && value >= 0 && value < count;
+    }
+
+    // 학습용 화면에서는 삽입 정렬 한 회전을 'Key 선택 → 최종 위치에 삽입'으로 표시합니다.
+    // Java가 생성한 모든 compare/shift 단계는 그대로 유지하고, 화면 단계만 묶습니다.
+    // 따라서 보이지 않는 중간 단계의 비교·이동 횟수도 정확하게 누적됩니다.
+    const visibleSteps = isInsertion
+        ? steps.map((step, i) => ({ action: step.action, i }))
+            .filter(item => ["initial", "pick", "insert", "complete"].includes(item.action))
+            .map(item => item.i)
+        : steps.map((_, i) => i);
+
+    // 삽입 정렬에서는 반드시 pick 다음에 insert가 화면 단계로 와야 합니다.
+    if (isInsertion) {
+        for (let i = 1; i < visibleSteps.length - 1; i += 2) {
+            if (steps[visibleSteps[i]].action !== "pick" ||
+                !steps[visibleSteps[i + 1]] || steps[visibleSteps[i + 1]].action !== "insert") {
+                fail("삽입 정렬의 단계 묶음이 올바르지 않습니다.");
+                return;
+            }
+        }
+    }
+
+    let index = 0; // 사용자에게 보이는 단계 번호
+    let timer = null;
+    let landingTimer = null;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    function motionDuration() {
+        return prefersReducedMotion.matches ? 0 : Math.min(480, Math.round((Number(speed.value) || 600) * 0.78));
+    }
+
+    function cancelLanding() {
+        if (landingTimer !== null) {
+            clearTimeout(landingTimer);
+            landingTimer = null;
+        }
+    }
+
+    function pause() {
+        if (timer !== null) clearInterval(timer);
+        timer = null;
+        playBtn.textContent = "▶ 재생";
+    }
+
+    function setSpeed() {
+        plot.style.setProperty("--viz-motion", `${motionDuration()}ms`);
+    }
+
+    function explain(step) {
+        if (step.action === "initial") return isInsertion
+            ? "첫 번째 원소는 정렬된 상태입니다. 재생을 눌러 시작하세요."
+            : "초기 배열 — 재생을 눌러 시작하세요.";
+        if (step.action === "complete") return "정렬이 완료되었습니다.";
+        if (step.action === "pick") return `${step.index1 + 1}번째 원소 ${step.keyValue}을 꺼내 삽입할 위치를 찾습니다.`;
+        if (step.action === "compare" && isInsertion) {
+            return `${step.index1 + 1}번째 값 ${step.array[step.index1]}과 Key ${step.keyValue}을 비교합니다.`;
+        }
+        if (step.action === "shift") {
+            return `${step.index1 + 1}번째 값 ${step.array[step.index2]}을 오른쪽 ${step.index2 + 1}번째 자리로 이동합니다.`;
+        }
+        if (step.action === "insert" && isInsertion) {
+            const moved = step.keyOrigin - step.index1;
+            return moved > 0
+                ? `Key ${step.keyValue}을 ${step.index1 + 1}번째 위치에 삽입합니다. ${moved}개 원소가 오른쪽으로 이동했습니다.`
+                : `Key ${step.keyValue}은 이미 올바른 위치에 있습니다.`;
+        }
+        if (step.action === "compare") return `${step.index1 + 1}번째와 ${step.index2 + 1}번째 원소를 비교합니다.`;
+        if (step.action === "swap") return `${step.index1 + 1}번째와 ${step.index2 + 1}번째 원소를 교환합니다.`;
+        if (step.action === "select") return `${step.index2 + 1}번째 원소를 최솟값 후보로 선택합니다.`;
+        if (step.action === "fixed") return `${step.index1 + 1}번째 위치의 값이 확정되었습니다.`;
+        return step.action || "실행 중";
+    }
+
+    function placeKeyAt(holeIndex) {
+        // 첫/끝 원소에서도 key 배지가 잘리지 않도록 안전한 위치에 표시합니다.
+        const center = (holeIndex + 0.5) * plot.clientWidth / count;
+        keyToken.style.left = `${Math.max(58, Math.min(plot.clientWidth - 58, center))}px`;
+    }
+
+    function render(animateLanding = false) {
+        cancelLanding();
+        const rawIndex = visibleSteps[index];
+        const step = steps[rawIndex];
+        const orderNow = orders[rawIndex];
+        const visibleIds = new Set();
+        const landing = animateLanding && step.action === "insert" &&
+            steps[visibleSteps[index - 1]]?.action === "pick" &&
+            step.index1 !== steps[visibleSteps[index - 1]].index1 &&
+            motionDuration() > 0;
+        const enteringId = landing ? carriedIds[visibleSteps[index - 1]] : null;
+
+        for (let pos = 0; pos < count; pos++) {
+            const id = orderNow[pos];
+            if (id === null) continue;
+            visibleIds.add(id);
+            const view = views[id];
+            const value = step.array[pos];
+            const height = Math.abs(value) / range * 100;
+            // Key는 이동 애니메이션이 끝날 때까지 위쪽 배지로만 보여줍니다.
+            view.slot.hidden = landing && id === enteringId;
+            view.slot.style.left = `${pos / count * 100}%`;
+            view.bar.style.height = value === 0 ? "3px" : `${height}%`;
+            view.bar.style.bottom = `${value < 0 ? baseline - height : baseline}%`;
+            view.bar.classList.toggle("negative", value < 0);
+            view.valueLabel.textContent = String(value);
+            view.slot.setAttribute("aria-label", `${pos + 1}번째 원소: ${value}`);
+            view.slot.classList.toggle("sorted", isInsertion && pos <= step.sortedEnd);
+            view.slot.classList.toggle("comparing", step.action === "compare" &&
+                (pos === step.index1 || (!isInsertion && pos === step.index2)));
+            view.slot.classList.toggle("swapping", step.action === "swap" &&
+                (pos === step.index1 || pos === step.index2));
+            view.slot.classList.toggle("shifting",
+                (step.action === "shift" && pos === step.index2) ||
+                (landing && pos > step.index1 && pos <= step.keyOrigin));
+            view.slot.classList.toggle("selected", step.action === "select" && pos === step.index2);
+            view.slot.classList.toggle("fixed", step.action === "fixed" && pos === step.index1);
+            view.slot.classList.toggle("inserted", step.action === "insert" && pos === step.index1);
+        }
+        for (let id = 0; id < count; id++) {
+            if (!visibleIds.has(id)) views[id].slot.hidden = true;
+        }
+
+        if (isInsertion) {
+            const carrying = carriedIds[rawIndex] !== null;
+            hole.hidden = !carrying && !landing;
+            keyToken.hidden = !carrying && !landing;
+            if (carrying || landing) {
+                const target = landing ? step.index1 : step.holeIndex;
+                hole.style.left = `${target / count * 100}%`;
+                hole.style.width = `${100 / count}%`;
+                keyNumber.textContent = String(step.keyValue);
+                keyToken.title = `현재 삽입할 값: ${step.keyValue}`;
+                placeKeyAt(target);
+            }
+            const drawnHole = landing ? step.index1 : step.holeIndex;
+            currentValues.textContent = `[${step.array.map((value, pos) =>
+                pos === drawnHole ? "□" : String(value)).join(", ")}]`;
+            if (landing) {
+                // 하나의 다음 클릭으로 Key는 최종 위치까지, 밀린 막대는 각자 한 칸씩 이동합니다.
+                // 1회 클릭 = 1회 이동 연산이라는 뜻은 아닙니다.
+                const finish = () => {
+                    views[enteringId].slot.hidden = false;
+                    for (let pos = step.index1 + 1; pos <= step.keyOrigin; pos++) {
+                        views[orderNow[pos]].slot.classList.remove("shifting");
                     }
-                    function setSpeed() {
-                        const wait = Number(speed.value) || 600;
-                        plot.style.setProperty("--viz-motion", `${Math.min(480, Math.round(wait * 0.78))}ms`);
-                    }
-                    function explain(step) {
-                        if (step.action === "initial") return "초기 배열 — 재생을 눌러 시작하세요";
-                        if (step.action === "complete") return "정렬 완료!";
-                        if (step.action === "compare") return `${step.index1 + 1}번째와 ${step.index2 + 1}번째 원소 비교`;
-                        if (step.action === "swap") return `${step.index1 + 1}번째와 ${step.index2 + 1}번째 원소 교환`;
-                        return step.action || "실행 중";
-                    }
-                    function render() {
-                        const step = steps[index];
-                        const orderNow = orders[index];
-                        // 핵심: 자리의 번호(1,2,3...)가 아니라 현재 실제 배열의 숫자로 갱신.
-                        for (let position = 0; position < count; position++) {
-                            const view = views[orderNow[position]];
-                            const value = step.array[position];
-                            const h = Math.abs(value) / range * 100;
-                            view.slot.style.left = `${position / count * 100}%`;
-                            view.bar.style.height = value === 0 ? "3px" : `${h}%`;
-                            view.bar.style.bottom = `${value < 0 ? baseline - h : baseline}%`;
-                            view.bar.classList.toggle("negative", value < 0);
-                            view.valueLabel.textContent = String(value);
-                            view.slot.setAttribute("aria-label", `${position + 1}번째 원소: ${value}`);
-                            const highlight = position === step.index1 || position === step.index2;
-                            view.slot.classList.toggle("comparing", highlight && step.action === "compare");
-                            view.slot.classList.toggle("swapping", highlight && step.action === "swap");
-                        }
-                        currentValues.textContent = `[${step.array.join(", ")}]`;
-                        actionText.textContent = explain(step);
-                        stepText.textContent = `${index} / ${steps.length - 1}`;
-                        currentStep.textContent = index;
-                        compareCount.textContent = compares[index];
-                        swapCount.textContent = swaps[index];
-                        progressBar.style.width = `${index / Math.max(1, steps.length - 1) * 100}%`;
-                        prevBtn.disabled = index === 0;
-                        nextBtn.disabled = index === steps.length - 1;
-                    }
-                    function next() {
-                        if (index < steps.length - 1) {
-                            index++;
-                            render();
-                        }
-                        if (index === steps.length - 1) pause();
-                    }
-                    function restartTimer() {
-                        if (timer !== null) clearInterval(timer);
-                        timer = setInterval(next, Number(speed.value) || 600);
-                    }
-                    playBtn.addEventListener("click", () => {
-                        if (timer !== null) { pause(); return; }
-                        if (index === steps.length - 1) { index = 0; render(); }
-                        playBtn.textContent = "⏸ 일시정지";
-                        restartTimer();
-                    });
-                    prevBtn.addEventListener("click", () => { pause(); if (index > 0) index--; render(); });
-                    nextBtn.addEventListener("click", () => { pause(); next(); });
-                    resetBtn.addEventListener("click", () => { pause(); index = 0; render(); });
-                    speed.addEventListener("change", () => {
-                        setSpeed();
-                        if (timer !== null) restartTimer();
-                    });
-                    document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
-                    setSpeed();
-                    render();
-                })();
+                    hole.hidden = true;
+                    keyToken.hidden = true;
+                    currentValues.textContent = `[${step.array.join(", ")}]`;
+                    landingTimer = null;
+                };
+                landingTimer = setTimeout(finish, motionDuration() + 20);
+            }
+        } else {
+            currentValues.textContent = `[${step.array.join(", ")}]`;
+        }
+
+        actionText.textContent = explain(step);
+        stepText.textContent = `${index} / ${visibleSteps.length - 1}`;
+        currentStep.textContent = String(index);
+        compareCount.textContent = String(compares[rawIndex]);
+        swapCount.textContent = String(operations[rawIndex]);
+        progressBar.style.width = `${index / Math.max(1, visibleSteps.length - 1) * 100}%`;
+        prevBtn.disabled = index === 0;
+        nextBtn.disabled = index === visibleSteps.length - 1;
+    }
+
+    function next() {
+        if (index < visibleSteps.length - 1) {
+            const previousStep = steps[visibleSteps[index]];
+            index++;
+            const current = steps[visibleSteps[index]];
+            render(isInsertion && previousStep.action === "pick" && current.action === "insert");
+        }
+        if (index === visibleSteps.length - 1) pause();
+    }
+
+    function restartTimer() {
+        if (timer !== null) clearInterval(timer);
+        timer = setInterval(next, Number(speed.value) || 600);
+    }
+
+    playBtn.addEventListener("click", () => {
+        if (timer !== null) { pause(); return; }
+        if (index === visibleSteps.length - 1) { index = 0; render(); }
+        playBtn.textContent = "⏸ 일시정지";
+        restartTimer();
+    });
+    prevBtn.addEventListener("click", () => { pause(); if (index > 0) index--; render(); });
+    nextBtn.addEventListener("click", () => { pause(); next(); });
+    resetBtn.addEventListener("click", () => { pause(); index = 0; render(); });
+    speed.addEventListener("change", () => {
+        setSpeed();
+        if (timer !== null) restartTimer();
+    });
+    document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
+    window.addEventListener("resize", () => {
+        if (isInsertion) {
+            const step = steps[visibleSteps[index]];
+            if (carriedIds[visibleSteps[index]] !== null) placeKeyAt(step.holeIndex);
+        }
+    });
+
+    setSpeed();
+    render();
+})();

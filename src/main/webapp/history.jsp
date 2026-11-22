@@ -107,7 +107,7 @@
                     <thead>
                         <tr>
                             <th scope="col">번호</th><th scope="col">실험 제목</th><th scope="col">알고리즘</th>
-                            <th scope="col">배열 크기</th><th scope="col">비교 횟수</th><th scope="col">교환 횟수</th><th scope="col">작성일</th><th scope="col">관리</th>
+                            <th scope="col">배열 크기</th><th scope="col">비교 횟수</th><th scope="col">교환·이동 횟수</th><th scope="col">작성일</th><th scope="col">관리</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -122,7 +122,7 @@
                                 <td><span class="history-algo history-algo-<%= HtmlUtil.escape(record.getAlgorithm()) %>"><%= HtmlUtil.escape(record.getAlgorithmLabel()) %></span></td>
                                 <td class="history-number"><%= record.getArraySize() %></td>
                                 <td class="history-number"><%= record.getComparisons() %></td>
-                                <td class="history-number"><%= record.getSwaps() %></td>
+                                <td class="history-number" title="<%= "insertion".equals(record.getAlgorithm()) ? "이동 횟수" : "교환 횟수" %>"><%= record.getSwaps() %></td>
                                 <td class="history-date"><%= record.getCreatedAt() == null ? "-" : dateFormat.format(record.getCreatedAt().toLocalDateTime()) %></td>
                                 <td class="history-manage">
                                     <form method="post" action="<%= request.getContextPath() %>/deleteExperimentProcess.jsp"

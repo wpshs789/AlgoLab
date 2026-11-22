@@ -290,3 +290,87 @@ a { color: inherit; }
 .save-callout .subtitle { margin: 0; }
 .save-link { display: inline-block; text-decoration: none; color: #fff; background: #0284c7; border-radius: 9px; padding: 12px 18px; font-weight: 700; font-size: 14px; white-space: nowrap; }
 .save-link:hover { background: #0369a1; }
+
+/* 선택 정렬과 삽입 정렬의 알고리즘별 단계 강조 */
+.viz-description { margin: -10px 0 17px; color: #94a3b8; font-size: 13px; line-height: 1.65; }
+.viz-slot.selected .viz-bar { background: #a78bfa; }
+.viz-slot.fixed .viz-bar { background: #34d399; }
+.viz-slot.inserted .viz-bar { background: #34d399; }
+
+/* 삽입 정렬: Key를 따로 들어 올리고, 빈자리에 왼쪽 원소를 한 칸씩 이동 */
+.viz-legend { display: flex; flex-wrap: wrap; gap: 9px 19px; margin: -2px 0 17px; color: #cbd5e1; font-size: 12px; }
+.viz-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.viz-legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; }
+.legend-key { background: #c4b5fd; }
+.legend-sorted { background: #34d399; }
+.legend-compare { background: #facc15; }
+.legend-shift { background: #fb7185; }
+.viz-legend i.legend-hole { border: 1px dashed #94a3b8; background: transparent; }
+.viz-stage.insertion-mode { height: 425px; padding-top: 92px; }
+.viz-slot[hidden], .viz-hole[hidden], .viz-key-token[hidden] { display: none; }
+.viz-slot.sorted .viz-bar { background: linear-gradient(180deg, #34d399, #059669); }
+.viz-slot.comparing .viz-bar { background: #facc15; }
+.viz-slot.shifting .viz-bar { background: #fb7185; }
+.viz-slot.inserted .viz-bar { background: #34d399; animation: viz-key-drop .28s ease-out; }
+.viz-key-token {
+    position: absolute;
+    top: -69px;
+    z-index: 4;
+    transform: translateX(-50%);
+    min-width: 94px;
+    max-width: 150px;
+    padding: 7px 11px;
+    border: 1px solid #c4b5fd;
+    border-radius: 10px;
+    background: #3b2c65;
+    color: #ede9fe;
+    text-align: center;
+    box-shadow: 0 10px 28px rgba(0,0,0,.2);
+    pointer-events: none;
+    transition: left var(--viz-motion) cubic-bezier(.22,1,.36,1);
+}
+.viz-key-token::after {
+    content: '';
+    position: absolute;
+    left: calc(50% - 1px);
+    top: 100%;
+    height: 12px;
+    border-left: 2px dotted #a78bfa;
+}
+.viz-key-token span { display: block; font-size: 10px; font-weight: 600; white-space: nowrap; }
+.viz-key-token strong { display: block; margin-top: 2px; font-size: 18px; overflow-wrap: anywhere; }
+.viz-hole {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    height: 100%;
+    border-left: 1px dashed rgba(196,181,253,.7);
+    border-right: 1px dashed rgba(196,181,253,.7);
+    border-radius: 7px;
+    background: linear-gradient(180deg,rgba(167,139,250,.035),rgba(167,139,250,.11));
+    color: #c4b5fd;
+    transition: left var(--viz-motion) cubic-bezier(.22,1,.36,1);
+    pointer-events: none;
+}
+.viz-hole span {
+    position: absolute;
+    bottom: -31px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 11px;
+    white-space: nowrap;
+}
+@keyframes viz-key-drop {
+    from { opacity: .5; transform: translateY(-23px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 768px) {
+    .viz-stage.insertion-mode { height: 352px; padding-top: 83px; }
+    .viz-key-token { top: -64px; padding: 6px 8px; min-width: 82px; }
+    .viz-key-token strong { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .viz-key-token, .viz-hole { transition: none; }
+    .viz-slot.inserted .viz-bar { animation: none; }
+}
