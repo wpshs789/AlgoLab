@@ -17,7 +17,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>AlgoLab - 알고리즘 시각화</title>
-    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261122navfix">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261123bench1">
 </head>
 <body>
     <jsp:include page="menu.jsp" />
@@ -70,6 +70,13 @@
                 </div>
                 <button type="submit" class="start-btn upload-btn">↥ 파일에서 불러오기</button>
             </form>
+        </section>
+
+        <section class="panel benchmark-home-callout">
+            <div><p class="eyebrow">PERFORMANCE COMPARISON</p>
+                <h2>5가지 정렬 알고리즘의 성능 비교</h2>
+                <p class="subtitle">같은 배열을 정렬한 뒤 실행 시간과 비교·이동 횟수를 표로 확인할 수 있습니다.</p></div>
+            <a class="save-link" href="<%= request.getContextPath() %>/benchmark.jsp">성능 비교하기 →</a>
         </section>
     </main>
 </body>

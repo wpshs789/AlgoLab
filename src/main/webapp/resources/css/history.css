@@ -118,3 +118,5 @@
 }
 .history-notice-success { border-color: #245b52; background: #0c2929; color: #b4f7e1; }
 .history-notice-error { border-color: #864055; background: #401b29; color: #fecaca; }
+
+@media (max-width:500px) { .header nav { gap: 9px; } }

@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.List,java.util.ArrayList,java.sql.SQLException,java.time.format.DateTimeFormatter" %>
+<%@ page import="com.algolab.benchmark.BenchmarkRecord,com.algolab.dao.BenchmarkDAO,com.algolab.util.BenchmarkToken" %>
 <%@ page import="com.algolab.dao.ExperimentDAO,com.algolab.dto.Experiment,com.algolab.util.HtmlUtil,com.algolab.util.ExperimentDeleteToken" %>
 <%
     request.setCharacterEncoding("UTF-8");
@@ -29,6 +30,15 @@
         application.log("AlgoLab: 실험 기록 SELECT 실패", ex);
         dbError = "실험 기록을 불러오지 못했습니다. 데이터베이스 연결과 테이블 생성 상태를 확인해 주세요.";
     }
+    // 기존 시각화 기록과 독립된 성능 비교 기록도 불러옵니다.
+    List<BenchmarkRecord> benchmarkRecords = new ArrayList<>();
+    String benchmarkError = null;
+    try {
+        benchmarkRecords = new BenchmarkDAO(application).findRecent(100);
+    } catch (SQLException ex) {
+        application.log("AlgoLab: 성능 비교 목록 조회 실패", ex);
+        benchmarkError = "성능 비교 기록을 불러오지 못했습니다. database/benchmark_schema.sql 실행 여부를 확인해 주세요.";
+    }
     String deleteCsrf = ExperimentDeleteToken.getOrCreate(session);
     String historyNotice = (String) session.getAttribute("historyNotice");
     String historyError = (String) session.getAttribute("historyError");
@@ -42,8 +52,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>AlgoLab - 실험 기록</title>
-    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261123bench1">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/history.css">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/benchmark.css?v=20261123bench1">
 </head>
 <body>
     <jsp:include page="menu.jsp" />
@@ -66,8 +77,8 @@
             <div class="history-notice" role="alert"><span><%= HtmlUtil.escape(dbError) %></span></div>
         <% } %>
         <section class="history-summary" aria-label="실험 기록 요약">
-            <div class="history-summary-card"><p>전체 기록</p><strong><%= totalCount %><span> 건</span></strong></div>
-            <div class="history-summary-card"><p>등록된 알고리즘</p><strong><%= algorithmCount %><span> 종류</span></strong></div>
+            <div class="history-summary-card"><p>시각화 기록</p><strong><%= totalCount %><span> 건</span></strong></div>
+            <div class="history-summary-card"><p>시각화 알고리즘</p><strong><%= algorithmCount %><span> 종류</span></strong></div>
             <div class="history-summary-card"><p>기록 관리</p><strong class="history-status-text"><%= dbError == null ? "MySQL 연결" : "연결 확인 필요" %></strong></div>
         </section>
         <section class="panel history-board" aria-labelledby="boardHeading">
@@ -139,7 +150,31 @@
                     </tbody>
                 </table>
             </div>
-            <p class="history-footer-note">현재는 정렬 시각화 실험 기록을 지원합니다. 성능 분석 결과 저장 기능은 추후 추가될 예정입니다.</p>
+            <p class="history-footer-note">시각화 실험과 성능 비교 실험은 별도로 관리됩니다. 성능 비교 기록은 아래에서 확인할 수 있습니다.</p>
+        </section>
+
+        <section class="panel benchmark-history-panel" aria-labelledby="savedBenchmarksHeading">
+            <div class="benchmark-history-head">
+                <div><p class="eyebrow">BENCHMARK LOG</p><h2 id="savedBenchmarksHeading">성능 비교 기록</h2>
+                    <p class="subtitle">같은 조건에서 실행한 5가지 정렬 알고리즘의 측정 결과를 확인합니다.</p></div>
+                <a class="history-main-action" href="<%= request.getContextPath() %>/benchmark.jsp">+ 성능 비교</a>
+            </div>
+            <% if (benchmarkError != null) { %><div class="history-notice" role="alert"><%= HtmlUtil.escape(benchmarkError) %></div><% } %>
+            <div class="benchmark-table-wrap"><table class="benchmark-history-table">
+                <thead><tr><th>번호</th><th>실험 제목</th><th>배열 크기</th><th>배열 형태</th><th>측정 횟수</th><th>저장 일시</th></tr></thead>
+                <tbody>
+                <% if (benchmarkRecords.isEmpty()) { %>
+                    <tr><td class="benchmark-history-empty" colspan="6"><%= benchmarkError == null ? "저장된 성능 비교 기록이 없습니다." : "성능 비교 데이터베이스를 확인해 주세요." %></td></tr>
+                <% } else { for (BenchmarkRecord record : benchmarkRecords) { %>
+                    <tr><td>#<%= record.getId() %></td>
+                        <td><a href="<%= request.getContextPath() %>/benchmarkDetail.jsp?id=<%= record.getId() %>"><%= HtmlUtil.escape(record.getTitle()) %></a></td>
+                        <td><%= record.getReport().getArraySize() %>개</td>
+                        <td><%= HtmlUtil.escape(record.getReport().getPatternLabel()) %></td>
+                        <td><%= record.getReport().getRepetitions() %>회</td>
+                        <td><%= record.getCreatedAt() == null ? "-" : dateFormat.format(record.getCreatedAt().toLocalDateTime()) %></td></tr>
+                <% } } %>
+                </tbody>
+            </table></div>
         </section>
         <div class="bottom-nav"><a class="back-link" href="<%= request.getContextPath() %>/index.jsp">← 메인으로 돌아가기</a></div>
     </main>

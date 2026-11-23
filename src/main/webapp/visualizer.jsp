@@ -88,7 +88,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>AlgoLab - 정렬 시각화</title>
-    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=insertion-one-jump-v2">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261123bench1">
     <% if ("merge".equals(algorithm)) { %>
         <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/mergesort.css?v=merge-bars-v2">
     <% } %>

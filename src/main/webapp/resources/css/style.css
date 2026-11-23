@@ -18,8 +18,6 @@ a { color: inherit; }
     border-bottom: 1px solid #1e293b;
 }
 .logo { font-size: 26px; font-weight: bold; text-decoration: none; }
-/* 메뉴 간격을 모든 페이지에서 동일하게 적용합니다. */
-.header nav { display: flex; align-items: center; gap: 24px; }
 .logo span, .eyebrow { color: #38bdf8; }
 .header nav a { color: #94a3b8; text-decoration: none; font-size: 14px; }
 .header nav a:hover { color: #38bdf8; }
@@ -178,7 +176,6 @@ a { color: inherit; }
 .error-panel p { color: #cbd5e1; margin: 0 0 20px; }
 @media (max-width: 768px) {
     .header { padding: 0 5%; }
-    .header nav { gap: 13px; }
     .container { margin: 34px auto; }
     .panel { padding: 19px; }
     .visualizer-area { height: 280px; padding: 14px 7px 36px; }
@@ -377,3 +374,16 @@ a { color: inherit; }
     .viz-key-token, .viz-hole { transition: none; }
     .viz-slot.inserted .viz-bar { animation: none; }
 }
+
+/* 상단 내비게이션을 전 페이지에서 동일한 간격으로 유지 */
+.header nav { display: flex; align-items: center; gap: 24px; }
+@media (max-width: 768px) { .header nav { gap: 13px; } }
+@media (max-width: 500px) {
+    .header { padding: 0 3%; }
+    .header .logo { font-size: 20px; }
+    .header nav { gap: 9px; }
+    .header nav a { font-size: 12px; white-space: nowrap; }
+}
+
+.benchmark-home-callout { margin-top:22px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
+.benchmark-home-callout h2 { font-size:21px; margin:0 0 9px; }
