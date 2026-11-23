@@ -1,14 +1,20 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="com.algolab.i18n.I18n" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="com.algolab.dto.SortStep" %>
 <%@ page import="com.algolab.service.SortingService" %>
 <%@ page import="com.algolab.service.ExperimentService" %>
+<% I18n msg = I18n.of(session); %>
 <%
     request.setCharacterEncoding("UTF-8");
 
     String algorithm = request.getParameter("algorithm");
     String numbers = request.getParameter("numbers");
+    if ("GET".equalsIgnoreCase(request.getMethod()) && algorithm == null && numbers == null) {
+        algorithm = (String) session.getAttribute("lastVizAlgorithm");
+        numbers = (String) session.getAttribute("lastVizNumbers");
+    }
     int[] inputArray = null;
     List<SortStep> steps = null;
     String error = null;
@@ -17,11 +23,11 @@
 
     try {
         if (numbers == null || numbers.trim().isEmpty()) {
-            throw new IllegalArgumentException("숫자를 입력해주세요.");
+            throw new IllegalArgumentException(msg.t("err.numbersRequired"));
         }
         String[] tokens = numbers.split(",", -1);
         if (tokens.length > 30) {
-            throw new IllegalArgumentException("숫자는 최대 30개까지 입력할 수 있습니다.");
+            throw new IllegalArgumentException(msg.t("err.numbersMax"));
         }
         inputArray = new int[tokens.length];
         for (int i = 0; i < tokens.length; i++) {
@@ -33,28 +39,33 @@
                 ExperimentService.fromVisualization(algorithm, inputArray, steps));
         // 성공적으로 실행된 배열은 같은 세션의 메인 화면에 다시 표시한다.
         String normalizedInput = Arrays.toString(inputArray);
-        session.setAttribute("lastNumbers", normalizedInput.substring(1, normalizedInput.length() - 1));
+        String normalizedNumbers = normalizedInput.substring(1, normalizedInput.length() - 1);
+        session.setAttribute("lastNumbers", normalizedNumbers);
+        session.setAttribute("lastVizAlgorithm", algorithm);
+        session.setAttribute("lastVizNumbers", normalizedNumbers);
+        com.algolab.util.AlgorithmCookie.save(request, response, algorithm);
     } catch (NumberFormatException ex) {
-        error = "쉼표(,)로 구분된 정수만 입력해주세요.";
+        error = msg.t("err.numbersFormat");
     } catch (IllegalArgumentException ex) {
-        error = ex.getMessage();
+        error = "지원하지 않는 알고리즘입니다.".equals(ex.getMessage()) ? msg.t("err.unsupported")
+            : "숫자는 1~30개까지 입력할 수 있습니다.".equals(ex.getMessage()) ? msg.t("err.count") : ex.getMessage();
     }
 
     String algorithmLabel = "bubble".equals(algorithm) ? "Bubble Sort"
             : "selection".equals(algorithm) ? "Selection Sort"
             : "insertion".equals(algorithm) ? "Insertion Sort"
             : "merge".equals(algorithm) ? "Merge Sort"
-            : "quick".equals(algorithm) ? "Quick Sort" : "정렬 알고리즘";
+            : "quick".equals(algorithm) ? "Quick Sort" : msg.t("viz.generic");
     String algorithmDescription = "bubble".equals(algorithm)
-            ? "인접한 두 원소를 비교하고 필요한 경우 교환합니다."
+            ? msg.t("viz.descBubble")
             : "selection".equals(algorithm)
-            ? "정렬되지 않은 구간에서 최솟값을 찾아 앞쪽에 배치합니다."
+            ? msg.t("viz.descSelection")
             : "insertion".equals(algorithm)
-            ? "삽입할 원소(Key)를 선택한 다음, 다음 단계에서 최종 위치로 이동합니다. 비교·이동 횟수는 실제 알고리즘 연산을 기준으로 집계합니다."
+            ? msg.t("viz.descInsertion")
             : "merge".equals(algorithm)
-            ? "배열을 작은 구간으로 나누고 다시 병합합니다. 비교한 값을 막대그래프로 확인하고, 분할 트리의 부모 노드가 채워지는 과정을 관찰할 수 있습니다."
+            ? msg.t("viz.descMerge")
             : "quick".equals(algorithm)
-            ? "현재 구간의 맨 오른쪽 값을 피벗(Pivot)으로 선택합니다. 피벗 이하의 원소를 왼쪽에 배치하고, 피벗의 위치를 확정한 다음 양쪽 구간을 재귀적으로 정렬합니다."
+            ? msg.t("viz.descQuick")
             : "";
 
     // action은 Java 구현에서 정해 둔 고정 문자열이고, array는 정수만 포함함.
@@ -83,12 +94,12 @@
     json.append(']');
 %>
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="<%= msg.language() %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AlgoLab - 정렬 시각화</title>
-    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261123bench1">
+    <title>AlgoLab - <%= msg.t("title.visualizer") %></title>
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261123i18n1">
     <% if ("merge".equals(algorithm)) { %>
         <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/mergesort.css?v=merge-bars-v2">
     <% } %>
@@ -101,15 +112,15 @@
     <main class="container">
         <div class="page-heading">
             <p class="eyebrow">ALGORITHM VISUALIZER</p>
-            <h1>정렬 알고리즘 시각화</h1>
-            <p class="subtitle">정렬 과정의 비교·교환·이동 단계를 시각적으로 확인할 수 있습니다.</p>
+            <h1><%= msg.t("viz.heading") %></h1>
+            <p class="subtitle"><%= msg.t("viz.lead") %></p>
         </div>
 
         <% if (error != null) { %>
             <section class="panel error-panel">
-                <h2>입력 오류</h2>
+                <h2><%= msg.t("viz.error") %></h2>
                 <p><%= error %></p>
-                <a href="index.jsp" class="back-link">← 다시 입력하기</a>
+                <a href="index.jsp" class="back-link"><%= msg.t("viz.retry") %></a>
             </section>
         <% } else { %>
             <section class="panel" id="vizRoot" data-algorithm="<%= algorithm %>">
@@ -118,86 +129,86 @@
                         <p class="eyebrow">SELECTED ALGORITHM</p>
                         <h2><%= algorithmLabel %></h2>
                     </div>
-                    <span class="badge"><%= "insertion".equals(algorithm) ? "한 번에 삽입" : "merge".equals(algorithm) ? "분할 · 병합" : "quick".equals(algorithm) ? "피벗 · 분할" : "Sorting" %></span>
+                    <span class="badge"><%= "insertion".equals(algorithm) ? msg.t("viz.oneJump") : "merge".equals(algorithm) ? msg.t("viz.divideConquer") : "quick".equals(algorithm) ? msg.t("viz.partition") : "Sorting" %></span>
                 </div>
 
                 <p class="viz-description"><%= algorithmDescription %></p>
-                <p class="viz-input">입력 배열: <strong id="originalValues"><%= Arrays.toString(inputArray) %></strong></p>
+                <p class="viz-input"><%= msg.t("viz.original") %><strong id="originalValues"><%= Arrays.toString(inputArray) %></strong></p>
                 <% if ("insertion".equals(algorithm)) { %>
-                    <div class="viz-legend" aria-label="삽입 정렬 색상 안내">
-                        <span><i class="legend-key"></i>삽입할 값</span>
-                        <span><i class="legend-sorted"></i>정렬된 구간</span>
-                        <span><i class="legend-shift"></i>한 번에 밀리는 원소</span>
-                        <span><i class="legend-hole"></i>빈자리</span>
+                    <div class="viz-legend" aria-label="<%= msg.t("viz.insertionLegend") %>">
+                        <span><i class="legend-key"></i><%= msg.t("viz.key") %></span>
+                        <span><i class="legend-sorted"></i><%= msg.t("viz.sorted") %></span>
+                        <span><i class="legend-shift"></i><%= msg.t("viz.shifted") %></span>
+                        <span><i class="legend-hole"></i><%= msg.t("viz.hole") %></span>
                     </div>
                 <% } %>
                 <% if ("merge".equals(algorithm)) { %>
-                    <div class="merge-legend" aria-label="병합 정렬 색상 안내">
-                        <span><i class="merge-dot dot-current"></i>진행 중인 구간</span>
-                        <span><i class="merge-dot dot-ready"></i>정렬 완료된 구간</span>
-                        <span><i class="merge-dot dot-split"></i>분할된 구간</span>
-                        <span><i class="merge-dot" style="background:#facc15"></i>비교 중인 값</span>
+                    <div class="merge-legend" aria-label="<%= msg.t("viz.mergeLegend") %>">
+                        <span><i class="merge-dot dot-current"></i><%= msg.t("viz.active") %></span>
+                        <span><i class="merge-dot dot-ready"></i><%= msg.t("viz.ready") %></span>
+                        <span><i class="merge-dot dot-split"></i><%= msg.t("viz.split") %></span>
+                        <span><i class="merge-dot" style="background:#facc15"></i><%= msg.t("viz.comparing") %></span>
                     </div>
                 <% } %>
                 <% if ("quick".equals(algorithm)) { %>
-                    <div class="quick-legend" aria-label="퀵 정렬 색상 안내">
-                        <span><i class="quick-dot quick-dot-pivot"></i>피벗(P)</span>
-                        <span><i class="quick-dot quick-dot-scan"></i>비교 중</span>
-                        <span><i class="quick-dot quick-dot-left"></i>피벗 이하 그룹</span>
-                        <span><i class="quick-dot quick-dot-fixed"></i>위치 확정</span>
+                    <div class="quick-legend" aria-label="<%= msg.t("viz.quickLegend") %>">
+                        <span><i class="quick-dot quick-dot-pivot"></i><%= msg.t("viz.pivot") %></span>
+                        <span><i class="quick-dot quick-dot-scan"></i><%= msg.t("viz.comparingShort") %></span>
+                        <span><i class="quick-dot quick-dot-left"></i><%= msg.t("viz.lessGroup") %></span>
+                        <span><i class="quick-dot quick-dot-fixed"></i><%= msg.t("viz.fixed") %></span>
                     </div>
-                    <div class="quick-summary" aria-label="현재 분할 정보">
-                        <div><span>현재 구간</span><strong id="quickRange">전체 배열</strong></div>
-                        <div><span>피벗 값</span><strong id="quickPivot">선택 전</strong></div>
-                        <div><span>피벗 이하 그룹</span><strong id="quickLeftGroup">-</strong></div>
-                        <div><span>위치 확정</span><strong id="quickFixedCount">0개</strong></div>
+                    <div class="quick-summary" aria-label="<%= msg.t("viz.partitionInfo") %>">
+                        <div><span><%= msg.t("viz.range") %></span><strong id="quickRange"><%= msg.t("viz.whole") %></strong></div>
+                        <div><span><%= msg.t("viz.pivotVal") %></span><strong id="quickPivot"><%= msg.t("viz.before") %></strong></div>
+                        <div><span><%= msg.t("viz.lessGroup") %></span><strong id="quickLeftGroup">-</strong></div>
+                        <div><span><%= msg.t("viz.fixed") %></span><strong id="quickFixedCount"><%= msg.f("js.countUnit", 0) %></strong></div>
                     </div>
-                    <p class="quick-caption">맨 오른쪽 원소를 피벗으로 선택합니다. 노란색 원소와 비교해 작은 값을 왼쪽으로 모으고, 피벗의 위치를 확정합니다.</p>
+                    <p class="quick-caption"><%= msg.t("viz.quickCaption") %></p>
                 <% } %>
                 <p id="vizWarning" class="viz-warning" role="alert"></p>
 
                 <% if ("merge".equals(algorithm)) { %>
                     <div class="merge-section-heading">
-                        <h3>분할 · 병합 트리</h3>
-                        <span>병합 중 부모 노드가 한 칸씩 채워집니다. 좌우 스크롤 가능</span>
+                        <h3><%= msg.t("viz.tree") %></h3>
+                        <span><%= msg.t("viz.treeHint") %></span>
                     </div>
                     <div class="merge-tree-scroll" id="mergeTreeScroll" tabindex="0"
-                         aria-label="병합 정렬 분할 트리. 좌우로 스크롤할 수 있습니다.">
+                         aria-label="<%= msg.t("viz.treeAria") %>">
                         <div class="merge-tree" id="mergeTree"></div>
                     </div>
                     <div class="merge-workbench" id="mergeWorkbench">
                         <div class="merge-workbench-head">
-                            <h3>병합 작업 공간</h3>
-                            <span id="mergePhase">분할 준비</span>
+                            <h3><%= msg.t("viz.workbench") %></h3>
+                            <span id="mergePhase"><%= msg.t("viz.mergeReady") %></span>
                         </div>
                         <div class="merge-lanes">
-                            <div class="merge-lane"><span>왼쪽 부분 배열</span><div id="mergeLeftValues" class="merge-bars" aria-label="왼쪽 부분 배열 막대그래프"></div></div>
-                            <div class="merge-lane"><span>오른쪽 부분 배열</span><div id="mergeRightValues" class="merge-bars" aria-label="오른쪽 부분 배열 막대그래프"></div></div>
+                            <div class="merge-lane"><span><%= msg.t("viz.leftArray") %></span><div id="mergeLeftValues" class="merge-bars" aria-label="<%= msg.t("viz.leftBars") %>"></div></div>
+                            <div class="merge-lane"><span><%= msg.t("viz.rightArray") %></span><div id="mergeRightValues" class="merge-bars" aria-label="<%= msg.t("viz.rightBars") %>"></div></div>
                         </div>
-                        <div class="merge-output-lane"><span>병합 결과 (임시 배열) · 왼쪽부터 한 칸씩 채워집니다</span><div id="mergeOutputValues" class="merge-bars" aria-label="임시 병합 결과 막대그래프"></div></div>
-                        <p class="merge-graph-explain">막대 높이는 입력값의 크기를 상대적으로 나타냅니다. 노란색은 비교 중인 값, 흐린 막대는 이미 배치한 값, 초록색은 방금 배치한 값입니다.</p>
-                        <p id="mergeHint" class="merge-hint">작은 배열로 나눈 뒤, 병합 과정에서 위쪽 트리와 아래쪽 그래프가 함께 갱신됩니다.</p>
+                        <div class="merge-output-lane"><span><%= msg.t("viz.output") %></span><div id="mergeOutputValues" class="merge-bars" aria-label="<%= msg.t("viz.outputBars") %>"></div></div>
+                        <p class="merge-graph-explain"><%= msg.t("viz.barsExplain") %></p>
+                        <p id="mergeHint" class="merge-hint"><%= msg.t("viz.mergeHint") %></p>
                     </div>
                 <% } else { %>
                     <div class="viz-stage">
-                        <div class="viz-plot" id="vizPlot" role="img" aria-label="정렬 단계를 나타내는 막대그래프"></div>
+                        <div class="viz-plot" id="vizPlot" role="img" aria-label="<%= msg.t("viz.barAria") %>"></div>
                     </div>
                 <% } %>
 
-                <p class="viz-current">현재 배열: <strong id="currentValues">불러오는 중…</strong></p>
+                <p class="viz-current"><%= msg.t("viz.current") %><strong id="currentValues"><%= msg.t("viz.loading") %></strong></p>
                 <div class="status-bar">
-                    <span id="actionText" role="status" aria-live="polite">정렬 준비</span>
+                    <span id="actionText" role="status" aria-live="polite"><%= msg.t("viz.initial") %></span>
                     <span id="stepText">0 / 0</span>
                 </div>
                 <div class="progress-track"><div id="progressBar" class="progress-fill"></div></div>
                 <div class="controls">
-                    <button type="button" id="prevBtn">◀ 이전</button>
-                    <button type="button" id="playBtn" class="primary-btn">▶ 재생</button>
-                    <button type="button" id="nextBtn">다음 ▶</button>
-                    <button type="button" id="resetBtn">↺ 처음으로</button>
+                    <button type="button" id="prevBtn"><%= msg.t("viz.previous") %></button>
+                    <button type="button" id="playBtn" class="primary-btn"><%= msg.t("viz.play") %></button>
+                    <button type="button" id="nextBtn"><%= msg.t("viz.next") %></button>
+                    <button type="button" id="resetBtn"><%= msg.t("viz.reset") %></button>
                 </div>
                 <div class="speed-control">
-                    <label for="speed">재생 속도</label>
+                    <label for="speed"><%= msg.t("viz.speed") %></label>
                     <select id="speed">
                         <option value="1200">0.5x</option>
                         <option value="600" selected>1x</option>
@@ -207,27 +218,28 @@
                 </div>
             </section>
             <section class="stats-grid">
-                <div class="stat-card"><p>배열 크기</p><h3><%= inputArray.length %></h3></div>
-                <div class="stat-card"><p>비교 횟수</p><h3 id="compareCount">0</h3></div>
-                <div class="stat-card"><p><%= "insertion".equals(algorithm) ? "이동 횟수" : "merge".equals(algorithm) ? "병합 배치 횟수" : "교환 횟수" %></p><h3 id="swapCount">0</h3></div>
-                <div class="stat-card"><p>현재 단계</p><h3 id="currentStep">0</h3></div>
+                <div class="stat-card"><p><%= msg.t("common.arraySize") %></p><h3><%= inputArray.length %></h3></div>
+                <div class="stat-card"><p><%= msg.t("common.comparisons") %></p><h3 id="compareCount">0</h3></div>
+                <div class="stat-card"><p><%= "insertion".equals(algorithm) ? msg.t("common.movements") : "merge".equals(algorithm) ? msg.t("common.mergeWrites") : msg.t("common.swaps") %></p><h3 id="swapCount">0</h3></div>
+                <div class="stat-card"><p><%= msg.t("viz.step") %></p><h3 id="currentStep">0</h3></div>
             </section>
             <section class="save-callout panel">
                 <div>
-                    <h2>실험 결과를 저장하시겠습니까?</h2>
-                    <p class="subtitle">입력 배열과 서버에서 계산한 비교 및 교환·이동 횟수를 실험 기록에 저장할 수 있습니다.</p>
+                    <h2><%= msg.t("viz.saveHeading") %></h2>
+                    <p class="subtitle"><%= msg.t("viz.saveLead") %></p>
                 </div>
-                <a class="save-link" href="<%= request.getContextPath() %>/saveExperiment.jsp">✎ 실험 기록 저장</a>
+                <a class="save-link" href="<%= request.getContextPath() %>/saveExperiment.jsp"><%= msg.t("viz.save") %></a>
             </section>
-            <div class="bottom-nav"><a class="back-link" href="index.jsp">← 다른 배열 입력하기</a></div>
+            <div class="bottom-nav"><a class="back-link" href="index.jsp"><%= msg.t("viz.back") %></a></div>
 
             <script id="sortData" type="application/json"><%= json.toString() %></script>
             <script id="inputData" type="application/json"><%= Arrays.toString(inputArray) %></script>
 
+            <script>window.AL_I18N = <%= msg.clientJson() %>;</script>
             <% if ("merge".equals(algorithm)) { %>
-                <script src="<%= request.getContextPath() %>/resources/js/mergesort.js?v=merge-bars-v2"></script>
+                <script src="<%= request.getContextPath() %>/resources/js/mergesort.js?v=i18n-v1"></script>
             <% } else { %>
-                <script src="<%= request.getContextPath() %>/resources/js/visualizer.js?v=quick-v1"></script>
+                <script src="<%= request.getContextPath() %>/resources/js/visualizer.js?v=i18n-v1"></script>
             <% } %>
         <% } %>
     </main>

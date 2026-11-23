@@ -4,6 +4,12 @@
     const root = document.getElementById("vizRoot");
     if (!root) return;
 
+    const messages = window.AL_I18N || {};
+    const t = (key, ...args) => {
+        let value = Object.prototype.hasOwnProperty.call(messages, key) ? messages[key] : key;
+        args.forEach((arg, n) => { value = value.replaceAll("{" + n + "}", String(arg)); });
+        return value;
+    };
     const plot = document.getElementById("vizPlot");
     const warning = document.getElementById("vizWarning");
     const playBtn = document.getElementById("playBtn");
@@ -34,18 +40,18 @@
         steps = JSON.parse(document.getElementById("sortData").textContent);
         original = JSON.parse(document.getElementById("inputData").textContent);
     } catch (e) {
-        fail("Java에서 전달한 정렬 데이터를 읽을 수 없습니다. " + e.message);
+        fail(t("js.jsonParse") + e.message);
         return;
     }
 
     if (!Array.isArray(steps) || steps.length === 0 ||
         !Array.isArray(original) || original.length === 0 ||
         steps.some(s => !s || !Array.isArray(s.array) || s.array.length !== original.length)) {
-        fail("정렬 단계 데이터의 형식이 잘못되었습니다.");
+        fail(t("js.invalidSteps"));
         return;
     }
     if (steps[0].array.some((v, i) => v !== original[i])) {
-        fail("시각화 데이터가 입력 배열과 일치하지 않습니다. 페이지를 새로고침해 주세요.");
+        fail(t("js.dataMismatch"));
         return;
     }
 
@@ -86,7 +92,7 @@
             const marker = document.createElement("span");
             marker.className = "quick-pivot-marker";
             marker.textContent = "P";
-            marker.setAttribute("aria-label", "피벗");
+            marker.setAttribute("aria-label", t("js.pivot"));
             marker.hidden = true;
             slot.appendChild(marker);
         }
@@ -102,7 +108,7 @@
         hole = document.createElement("div");
         hole.className = "viz-hole";
         const holeText = document.createElement("span");
-        holeText.textContent = "빈자리";
+        holeText.textContent = t("js.emptySlot");
         hole.appendChild(holeText);
         hole.hidden = true;
         plot.appendChild(hole);
@@ -110,7 +116,7 @@
         keyToken = document.createElement("div");
         keyToken.className = "viz-key-token";
         const keyCaption = document.createElement("span");
-        keyCaption.textContent = "삽입할 값 (Key)";
+        keyCaption.textContent = t("js.keyToken");
         keyNumber = document.createElement("strong");
         keyToken.append(keyCaption, keyNumber);
         keyToken.hidden = true;
@@ -135,14 +141,14 @@
         const a = step.index1, b = step.index2;
         if (step.action === "swap" || (isQuick && step.action === "swapPivot")) {
             if (!validIndex(a) || !validIndex(b)) {
-                fail("교환 단계의 인덱스가 올바르지 않습니다.");
+                fail(t("js.swapIndex"));
                 return;
             }
             [order[a], order[b]] = [order[b], order[a]];
             numOperations++;
         } else if (isInsertion && step.action === "pick") {
             if (!validIndex(a) || carried !== null || order[a] === null || step.holeIndex !== a) {
-                fail("삽입할 원소를 선택하는 단계가 올바르지 않습니다.");
+                fail(t("js.pickIndex"));
                 return;
             }
             carried = order[a];
@@ -150,7 +156,7 @@
         } else if (isInsertion && step.action === "shift") {
             if (!validIndex(a) || !validIndex(b) || carried === null ||
                 order[a] === null || order[b] !== null || step.holeIndex !== a) {
-                fail("원소를 오른쪽으로 이동하는 단계가 올바르지 않습니다.");
+                fail(t("js.shiftIndex"));
                 return;
             }
             order[b] = order[a];
@@ -158,7 +164,7 @@
             numOperations++;
         } else if (isInsertion && step.action === "insert") {
             if (!validIndex(a) || carried === null || order[a] !== null || step.holeIndex !== -1) {
-                fail("원소를 삽입하는 단계가 올바르지 않습니다.");
+                fail(t("js.insertIndex"));
                 return;
             }
             order[a] = carried;
@@ -169,19 +175,19 @@
         if (isQuick) {
             if (step.action === "quickPlaced" || step.action === "quickSingle") {
                 if (!validIndex(step.index1) || fixedIndices.has(step.index1)) {
-                    fail("퀵 정렬의 위치 확정 정보가 올바르지 않습니다.");
+                    fail(t("js.quickFixed"));
                     return;
                 }
                 fixedIndices.add(step.index1);
             }
             for (let pos = 0; pos < count; pos++) {
                 if (original[order[pos]] !== step.array[pos]) {
-                    fail("퀵 정렬의 교환 결과가 올바르지 않습니다.");
+                    fail(t("js.quickSwap"));
                     return;
                 }
             }
             if (step.action === "complete" && fixedIndices.size !== count) {
-                fail("퀵 정렬에서 모든 위치가 확정되지 않았습니다.");
+                fail(t("js.quickIncomplete"));
                 return;
             }
             quickFixed.push(new Set(fixedIndices));
@@ -191,13 +197,13 @@
             for (let pos = 0; pos < count; pos++) {
                 const id = order[pos];
                 if (id !== null && original[id] !== step.array[pos]) {
-                    fail("삽입 정렬 단계의 배열 값이 올바르지 않습니다.");
+                    fail(t("js.insertionArray"));
                     return;
                 }
             }
             if ((carried === null) !== (step.holeIndex === -1) ||
                 (carried !== null && original[carried] !== step.keyValue)) {
-                fail("삽입 정렬 단계의 빈자리 정보가 올바르지 않습니다.");
+                fail(t("js.insertionHole"));
                 return;
             }
         }
@@ -225,7 +231,7 @@
         for (let i = 1; i < visibleSteps.length - 1; i += 2) {
             if (steps[visibleSteps[i]].action !== "pick" ||
                 !steps[visibleSteps[i + 1]] || steps[visibleSteps[i + 1]].action !== "insert") {
-                fail("삽입 정렬의 단계 묶음이 올바르지 않습니다.");
+                fail(t("js.insertionGroup"));
                 return;
             }
         }
@@ -250,7 +256,7 @@
     function pause() {
         if (timer !== null) clearInterval(timer);
         timer = null;
-        playBtn.textContent = "▶ 재생";
+        playBtn.textContent = t("js.play");
     }
 
     function setSpeed() {
@@ -258,38 +264,30 @@
     }
 
     function explain(step) {
-        if (step.action === "initial") return isInsertion
-            ? "첫 번째 원소는 정렬된 상태입니다. 재생을 눌러 시작하세요."
-            : "초기 배열 — 재생을 눌러 시작하세요.";
+        if (step.action === "initial") return isInsertion ? t("js.insertionInitial") : t("js.initial");
         if (isQuick) {
-            if (step.action === "quickStart") return `${step.left + 1}~${step.right + 1}번째 구간에서 맨 오른쪽 값 ${step.array[step.right]}을 피벗으로 선택합니다.`;
-            if (step.action === "compare") return `${step.index1 + 1}번째 값 ${step.array[step.index1]}과 피벗 ${step.array[step.right]}을 비교합니다.`;
-            if (step.action === "quickKeep") return `${step.array[step.index1]}은 피벗 이하이며 이미 왼쪽 그룹에 있습니다. 경계를 한 칸 옮깁니다.`;
-            if (step.action === "quickSkip") return `${step.array[step.index1]}은 피벗보다 큽니다. 오른쪽 그룹에 남겨 둡니다.`;
-            if (step.action === "swap") return `${step.index1 + 1}번째와 ${step.index2 + 1}번째 값을 교환해 피벗 이하 원소를 왼쪽 그룹에 배치합니다.`;
-            if (step.action === "swapPivot") return `피벗 ${step.array[step.index1]}을 ${step.index1 + 1}번째 위치로 옮깁니다.`;
-            if (step.action === "quickPlaced") return `피벗 ${step.array[step.index1]}의 위치가 ${step.index1 + 1}번째로 확정되었습니다. 양쪽 구간을 각각 정렬합니다.`;
-            if (step.action === "quickSingle") return `${step.index1 + 1}번째 원소 ${step.array[step.index1]}만 남은 구간은 이미 정렬되어 있습니다.`;
+            if (step.action === "quickStart") return t("js.quickStart", step.left + 1, step.right + 1, step.array[step.right]);
+            if (step.action === "compare") return t("js.quickCompare", step.index1 + 1, step.array[step.index1], step.array[step.right]);
+            if (step.action === "quickKeep") return t("js.quickKeep", step.array[step.index1]);
+            if (step.action === "quickSkip") return t("js.quickSkip", step.array[step.index1]);
+            if (step.action === "swap") return t("js.quickSwapExplain", step.index1 + 1, step.index2 + 1);
+            if (step.action === "swapPivot") return t("js.quickSwapPivot", step.array[step.index1], step.index1 + 1);
+            if (step.action === "quickPlaced") return t("js.quickPlaced", step.array[step.index1], step.index1 + 1);
+            if (step.action === "quickSingle") return t("js.quickSingle", step.index1 + 1, step.array[step.index1]);
         }
-        if (step.action === "complete") return "정렬이 완료되었습니다.";
-        if (step.action === "pick") return `${step.index1 + 1}번째 원소 ${step.keyValue}을 꺼내 삽입할 위치를 찾습니다.`;
-        if (step.action === "compare" && isInsertion) {
-            return `${step.index1 + 1}번째 값 ${step.array[step.index1]}과 Key ${step.keyValue}을 비교합니다.`;
-        }
-        if (step.action === "shift") {
-            return `${step.index1 + 1}번째 값 ${step.array[step.index2]}을 오른쪽 ${step.index2 + 1}번째 자리로 이동합니다.`;
-        }
+        if (step.action === "complete") return t("js.sorted");
+        if (step.action === "pick") return t("js.pick", step.index1 + 1, step.keyValue);
+        if (step.action === "compare" && isInsertion) return t("js.keyCompare", step.index1 + 1, step.array[step.index1], step.keyValue);
+        if (step.action === "shift") return t("js.shift", step.index1 + 1, step.array[step.index2], step.index2 + 1);
         if (step.action === "insert" && isInsertion) {
             const moved = step.keyOrigin - step.index1;
-            return moved > 0
-                ? `Key ${step.keyValue}을 ${step.index1 + 1}번째 위치에 삽입합니다. ${moved}개 원소가 오른쪽으로 이동했습니다.`
-                : `Key ${step.keyValue}은 이미 올바른 위치에 있습니다.`;
+            return moved > 0 ? t("js.insert", step.keyValue, step.index1 + 1, moved) : t("js.already", step.keyValue);
         }
-        if (step.action === "compare") return `${step.index1 + 1}번째와 ${step.index2 + 1}번째 원소를 비교합니다.`;
-        if (step.action === "swap") return `${step.index1 + 1}번째와 ${step.index2 + 1}번째 원소를 교환합니다.`;
-        if (step.action === "select") return `${step.index2 + 1}번째 원소를 최솟값 후보로 선택합니다.`;
-        if (step.action === "fixed") return `${step.index1 + 1}번째 위치의 값이 확정되었습니다.`;
-        return step.action || "실행 중";
+        if (step.action === "compare") return t("js.compare", step.index1 + 1, step.index2 + 1);
+        if (step.action === "swap") return t("js.swap", step.index1 + 1, step.index2 + 1);
+        if (step.action === "select") return t("js.select", step.index2 + 1);
+        if (step.action === "fixed") return t("js.fixed", step.index1 + 1);
+        return step.action || t("js.running");
     }
 
     function placeKeyAt(holeIndex) {
@@ -339,7 +337,7 @@
             view.bar.style.bottom = `${value < 0 ? baseline - height : baseline}%`;
             view.bar.classList.toggle("negative", value < 0);
             view.valueLabel.textContent = String(value);
-            view.slot.setAttribute("aria-label", `${pos + 1}번째 원소: ${value}`);
+            view.slot.setAttribute("aria-label", t("js.slotAria", pos + 1, value));
             view.slot.classList.toggle("sorted", isInsertion && pos <= step.sortedEnd);
             view.slot.classList.toggle("comparing", step.action === "compare" &&
                 (pos === step.index1 || (!isInsertion && pos === step.index2)));
@@ -381,7 +379,7 @@
                 hole.style.left = `${target / count * 100}%`;
                 hole.style.width = `${100 / count}%`;
                 keyNumber.textContent = String(step.keyValue);
-                keyToken.title = `현재 삽입할 값: ${step.keyValue}`;
+                keyToken.title = t("js.keyTitle", step.keyValue);
                 placeKeyAt(target);
             }
             const drawnHole = landing ? step.index1 : step.holeIndex;
@@ -410,13 +408,13 @@
             const rangeLabel = document.getElementById("quickRange");
             const pivotLabel = document.getElementById("quickPivot");
             const leftLabel = document.getElementById("quickLeftGroup");
-            rangeLabel.textContent = activeQuick ? `${step.left + 1} ~ ${step.right + 1}번째` : "전체 배열";
-            pivotLabel.textContent = activeQuick ? `${step.array[pivotPos]} (${pivotPos + 1}번째)` :
-                (step.action === "complete" ? "정렬 완료" : "선택 전");
+            rangeLabel.textContent = activeQuick ? t("js.quickRange", step.left + 1, step.right + 1) : t("js.whole");
+            pivotLabel.textContent = activeQuick ? t("js.quickPivotLabel", step.array[pivotPos], pivotPos + 1) :
+                (step.action === "complete" ? t("js.completeShort") : t("js.notSelected"));
             const leftLength = activeQuick ? Math.max(0, step.mid - step.left + 1 -
                 (["quickPlaced", "quickSingle"].includes(step.action) ? 1 : 0)) : 0;
-            leftLabel.textContent = activeQuick ? `${leftLength}개` : "-";
-            document.getElementById("quickFixedCount").textContent = `${fixedNow.size}개 / ${count}개`;
+            leftLabel.textContent = activeQuick ? t("js.countUnit", leftLength) : "-";
+            document.getElementById("quickFixedCount").textContent = t("js.fixedCount", fixedNow.size, count);
         }
 
         actionText.textContent = explain(step);
@@ -447,7 +445,7 @@
     playBtn.addEventListener("click", () => {
         if (timer !== null) { pause(); return; }
         if (index === visibleSteps.length - 1) { index = 0; render(); }
-        playBtn.textContent = "⏸ 일시정지";
+        playBtn.textContent = t("js.pause");
         restartTimer();
     });
     prevBtn.addEventListener("click", () => { pause(); if (index > 0) index--; render(); });

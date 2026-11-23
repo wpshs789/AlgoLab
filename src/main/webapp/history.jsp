@@ -1,7 +1,9 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="com.algolab.i18n.I18n" %>
 <%@ page import="java.util.List,java.util.ArrayList,java.sql.SQLException,java.time.format.DateTimeFormatter" %>
 <%@ page import="com.algolab.benchmark.BenchmarkRecord,com.algolab.dao.BenchmarkDAO,com.algolab.util.BenchmarkToken" %>
 <%@ page import="com.algolab.dao.ExperimentDAO,com.algolab.dto.Experiment,com.algolab.util.HtmlUtil,com.algolab.util.ExperimentDeleteToken" %>
+<% I18n msg = I18n.of(session); %>
 <%
     request.setCharacterEncoding("UTF-8");
     String keyword = request.getParameter("keyword");
@@ -28,7 +30,7 @@
         algorithmCount = dao.countAlgorithms();
     } catch (SQLException ex) {
         application.log("AlgoLab: 실험 기록 SELECT 실패", ex);
-        dbError = "실험 기록을 불러오지 못했습니다. 데이터베이스 연결과 테이블 생성 상태를 확인해 주세요.";
+        dbError = msg.t("err.historyDb");
     }
     // 기존 시각화 기록과 독립된 성능 비교 기록도 불러옵니다.
     List<BenchmarkRecord> benchmarkRecords = new ArrayList<>();
@@ -37,7 +39,7 @@
         benchmarkRecords = new BenchmarkDAO(application).findRecent(100);
     } catch (SQLException ex) {
         application.log("AlgoLab: 성능 비교 목록 조회 실패", ex);
-        benchmarkError = "성능 비교 기록을 불러오지 못했습니다. database/benchmark_schema.sql 실행 여부를 확인해 주세요.";
+        benchmarkError = msg.t("err.historyBenchmarkDb");
     }
     String deleteCsrf = ExperimentDeleteToken.getOrCreate(session);
     String historyNotice = (String) session.getAttribute("historyNotice");
@@ -47,14 +49,14 @@
     DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm");
 %>
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="<%= msg.language() %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>AlgoLab - 실험 기록</title>
-    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261123bench1">
+    <title>AlgoLab - <%= msg.t("title.history") %></title>
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261123i18n1">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/history.css">
-    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/benchmark.css?v=20261123bench1">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/benchmark.css?v=20261123i18n1">
 </head>
 <body>
     <jsp:include page="menu.jsp" />
@@ -62,10 +64,10 @@
         <div class="history-heading">
             <div class="page-heading">
                 <p class="eyebrow">EXPERIMENT LOG</p>
-                <h1>실험 기록</h1>
-                <p class="subtitle">저장된 정렬 실험을 검색하고 다시 실행할 수 있습니다.</p>
+                <h1><%= msg.t("history.heading") %></h1>
+                <p class="subtitle"><%= msg.t("history.lead") %></p>
             </div>
-            <a href="<%= request.getContextPath() %>/index.jsp" class="history-main-action">+ 새로운 실험</a>
+            <a href="<%= request.getContextPath() %>/index.jsp" class="history-main-action"><%= msg.t("history.new") %></a>
         </div>
         <% if (historyNotice != null) { %>
             <div class="history-notice history-notice-success" role="status"><span><%= HtmlUtil.escape(historyNotice) %></span></div>
@@ -76,29 +78,29 @@
         <% if (dbError != null) { %>
             <div class="history-notice" role="alert"><span><%= HtmlUtil.escape(dbError) %></span></div>
         <% } %>
-        <section class="history-summary" aria-label="실험 기록 요약">
-            <div class="history-summary-card"><p>시각화 기록</p><strong><%= totalCount %><span> 건</span></strong></div>
-            <div class="history-summary-card"><p>시각화 알고리즘</p><strong><%= algorithmCount %><span> 종류</span></strong></div>
-            <div class="history-summary-card"><p>기록 관리</p><strong class="history-status-text"><%= dbError == null ? "MySQL 연결" : "연결 확인 필요" %></strong></div>
+        <section class="history-summary" aria-label="<%= msg.t("history.summaryAria") %>">
+            <div class="history-summary-card"><p><%= msg.t("history.visualizationCount") %></p><strong><%= totalCount %><span><%= msg.t("common.records") %></span></strong></div>
+            <div class="history-summary-card"><p><%= msg.t("history.sortCount") %></p><strong><%= algorithmCount %><span><%= msg.t("common.types") %></span></strong></div>
+            <div class="history-summary-card"><p><%= msg.t("history.management") %></p><strong class="history-status-text"><%= dbError == null ? msg.t("history.dbConnected") : msg.t("history.dbDisconnected") %></strong></div>
         </section>
         <section class="panel history-board" aria-labelledby="boardHeading">
             <div class="history-board-heading">
                 <div>
                     <p class="eyebrow">EXPERIMENTS</p>
-                    <h2 id="boardHeading">실험 목록</h2>
+                    <h2 id="boardHeading"><%= msg.t("history.list") %></h2>
                 </div>
-                <span class="history-count">최대 200건 · <%= records.size() %>건 표시</span>
+                <span class="history-count"><%= msg.f("history.max", records.size()) %></span>
             </div>
             <form method="get" action="<%= request.getContextPath() %>/history.jsp" class="history-search" role="search">
                 <div class="history-field history-keyword">
-                    <label for="historyKeyword">제목 검색</label>
+                    <label for="historyKeyword"><%= msg.t("history.searchTitle") %></label>
                     <input type="search" id="historyKeyword" name="keyword" maxlength="100"
-                           placeholder="실험 제목을 검색하세요" value="<%= HtmlUtil.escape(keyword) %>">
+                           placeholder="<%= msg.t("history.searchPlaceholder") %>" value="<%= HtmlUtil.escape(keyword) %>">
                 </div>
                 <div class="history-field">
-                    <label for="historyAlgorithm">알고리즘</label>
+                    <label for="historyAlgorithm"><%= msg.t("common.algorithm") %></label>
                     <select id="historyAlgorithm" name="algorithm">
-                        <option value="all" <%= "all".equals(algorithmFilter) ? "selected" : "" %>>전체</option>
+                        <option value="all" <%= "all".equals(algorithmFilter) ? "selected" : "" %>><%= msg.t("history.all") %></option>
                         <option value="bubble" <%= "bubble".equals(algorithmFilter) ? "selected" : "" %>>Bubble Sort</option>
                         <option value="selection" <%= "selection".equals(algorithmFilter) ? "selected" : "" %>>Selection Sort</option>
                         <option value="insertion" <%= "insertion".equals(algorithmFilter) ? "selected" : "" %>>Insertion Sort</option>
@@ -107,27 +109,27 @@
                     </select>
                 </div>
                 <div class="history-field">
-                    <label for="historyOrder">정렬</label>
+                    <label for="historyOrder"><%= msg.t("history.order") %></label>
                     <select id="historyOrder" name="order">
-                        <option value="latest" <%= "latest".equals(order) ? "selected" : "" %>>최신순</option>
-                        <option value="oldest" <%= "oldest".equals(order) ? "selected" : "" %>>오래된순</option>
+                        <option value="latest" <%= "latest".equals(order) ? "selected" : "" %>><%= msg.t("history.latest") %></option>
+                        <option value="oldest" <%= "oldest".equals(order) ? "selected" : "" %>><%= msg.t("history.oldest") %></option>
                     </select>
                 </div>
-                <button type="submit" class="history-search-btn">검색</button>
+                <button type="submit" class="history-search-btn"><%= msg.t("history.search") %></button>
             </form>
             <div class="history-table-scroll">
                 <table class="history-table">
                     <thead>
                         <tr>
-                            <th scope="col">번호</th><th scope="col">실험 제목</th><th scope="col">알고리즘</th>
-                            <th scope="col">배열 크기</th><th scope="col">비교 횟수</th><th scope="col">교환·이동 횟수</th><th scope="col">작성일</th><th scope="col">관리</th>
+                            <th scope="col"><%= msg.t("common.id") %></th><th scope="col"><%= msg.t("common.title") %></th><th scope="col"><%= msg.t("common.algorithm") %></th>
+                            <th scope="col"><%= msg.t("common.arraySize") %></th><th scope="col"><%= msg.t("common.comparisons") %></th><th scope="col"><%= msg.t("history.operations") %></th><th scope="col"><%= msg.t("history.created") %></th><th scope="col"><%= msg.t("history.manage") %></th>
                         </tr>
                     </thead>
                     <tbody>
                         <% if (dbError == null && records.isEmpty()) { %>
-                            <tr><td colspan="8" class="history-empty">등록된 실험이 없거나 검색 조건에 맞는 기록이 없습니다.</td></tr>
+                            <tr><td colspan="8" class="history-empty"><%= msg.t("history.noRows") %></td></tr>
                         <% } else if (dbError != null) { %>
-                            <tr><td colspan="8" class="history-empty">데이터베이스 연결을 확인한 후 새로고침해 주세요.</td></tr>
+                            <tr><td colspan="8" class="history-empty"><%= msg.t("history.retryDb") %></td></tr>
                         <% } else { for (Experiment record : records) { %>
                             <tr>
                                 <td class="history-id">#<%= record.getId() %></td>
@@ -135,14 +137,16 @@
                                 <td><span class="history-algo history-algo-<%= HtmlUtil.escape(record.getAlgorithm()) %>"><%= HtmlUtil.escape(record.getAlgorithmLabel()) %></span></td>
                                 <td class="history-number"><%= record.getArraySize() %></td>
                                 <td class="history-number"><%= record.getComparisons() %></td>
-                                <td class="history-number" title="<%= "insertion".equals(record.getAlgorithm()) ? "이동 횟수" : "merge".equals(record.getAlgorithm()) ? "병합 배치 횟수" : "교환 횟수" %>"><%= record.getSwaps() %></td>
+                                <td class="history-number" title="<%= "insertion".equals(record.getAlgorithm()) ? msg.t("common.movements") : "merge".equals(record.getAlgorithm()) ? msg.t("common.mergeWrites") : msg.t("common.swaps") %>"><%= record.getSwaps() %></td>
                                 <td class="history-date"><%= record.getCreatedAt() == null ? "-" : dateFormat.format(record.getCreatedAt().toLocalDateTime()) %></td>
                                 <td class="history-manage">
                                     <form method="post" action="<%= request.getContextPath() %>/deleteExperimentProcess.jsp"
-                                          onsubmit="return confirm('실험 기록을 삭제하시겠습니까? 삭제된 기록은 복구할 수 없습니다.');">
+                                          data-confirm-message="<%= HtmlUtil.escape(msg.t("history.confirmDelete")) %>"
+                                          data-confirm-ok="<%= HtmlUtil.escape(msg.t("common.delete")) %>"
+                                          data-confirm-cancel="<%= HtmlUtil.escape(msg.t("common.cancel")) %>">
                                         <input type="hidden" name="csrf" value="<%= deleteCsrf %>">
                                         <input type="hidden" name="id" value="<%= record.getId() %>">
-                                        <button class="history-delete-button" type="submit" aria-label="<%= HtmlUtil.escape(record.getTitle()) %> 삭제">삭제</button>
+                                        <button class="history-delete-button" type="submit" aria-label="<%= HtmlUtil.escape(msg.f("history.deleteLabel", record.getTitle())) %>"><%= msg.t("common.delete") %></button>
                                     </form>
                                 </td>
                             </tr>
@@ -150,33 +154,34 @@
                     </tbody>
                 </table>
             </div>
-            <p class="history-footer-note">시각화 실험과 성능 비교 실험은 별도로 관리됩니다. 성능 비교 기록은 아래에서 확인할 수 있습니다.</p>
+            <p class="history-footer-note"><%= msg.t("history.separate") %></p>
         </section>
 
         <section class="panel benchmark-history-panel" aria-labelledby="savedBenchmarksHeading">
             <div class="benchmark-history-head">
-                <div><p class="eyebrow">BENCHMARK LOG</p><h2 id="savedBenchmarksHeading">성능 비교 기록</h2>
-                    <p class="subtitle">같은 조건에서 실행한 5가지 정렬 알고리즘의 측정 결과를 확인합니다.</p></div>
-                <a class="history-main-action" href="<%= request.getContextPath() %>/benchmark.jsp">+ 성능 비교</a>
+                <div><p class="eyebrow">BENCHMARK LOG</p><h2 id="savedBenchmarksHeading"><%= msg.t("history.benchHeading") %></h2>
+                    <p class="subtitle"><%= msg.t("history.benchLead") %></p></div>
+                <a class="history-main-action" href="<%= request.getContextPath() %>/benchmark.jsp"><%= msg.t("history.newBenchmark") %></a>
             </div>
             <% if (benchmarkError != null) { %><div class="history-notice" role="alert"><%= HtmlUtil.escape(benchmarkError) %></div><% } %>
             <div class="benchmark-table-wrap"><table class="benchmark-history-table">
-                <thead><tr><th>번호</th><th>실험 제목</th><th>배열 크기</th><th>배열 형태</th><th>측정 횟수</th><th>저장 일시</th></tr></thead>
+                <thead><tr><th><%= msg.t("common.id") %></th><th><%= msg.t("common.title") %></th><th><%= msg.t("common.arraySize") %></th><th><%= msg.t("history.pattern") %></th><th><%= msg.t("benchmark.repetitions") %></th><th><%= msg.t("history.savedDate") %></th></tr></thead>
                 <tbody>
                 <% if (benchmarkRecords.isEmpty()) { %>
-                    <tr><td class="benchmark-history-empty" colspan="6"><%= benchmarkError == null ? "저장된 성능 비교 기록이 없습니다." : "성능 비교 데이터베이스를 확인해 주세요." %></td></tr>
+                    <tr><td class="benchmark-history-empty" colspan="6"><%= benchmarkError == null ? msg.t("history.noBenchmark") : msg.t("history.checkBenchmark") %></td></tr>
                 <% } else { for (BenchmarkRecord record : benchmarkRecords) { %>
                     <tr><td>#<%= record.getId() %></td>
                         <td><a href="<%= request.getContextPath() %>/benchmarkDetail.jsp?id=<%= record.getId() %>"><%= HtmlUtil.escape(record.getTitle()) %></a></td>
-                        <td><%= record.getReport().getArraySize() %>개</td>
-                        <td><%= HtmlUtil.escape(record.getReport().getPatternLabel()) %></td>
-                        <td><%= record.getReport().getRepetitions() %>회</td>
+                        <td><%= record.getReport().getArraySize() %><%= msg.t("common.items") %></td>
+                        <td><%= msg.t("pattern." + record.getReport().getPattern()) %></td>
+                        <td><%= record.getReport().getRepetitions() %><%= msg.t("common.repetitions") %></td>
                         <td><%= record.getCreatedAt() == null ? "-" : dateFormat.format(record.getCreatedAt().toLocalDateTime()) %></td></tr>
                 <% } } %>
                 </tbody>
             </table></div>
         </section>
-        <div class="bottom-nav"><a class="back-link" href="<%= request.getContextPath() %>/index.jsp">← 메인으로 돌아가기</a></div>
+        <div class="bottom-nav"><a class="back-link" href="<%= request.getContextPath() %>/index.jsp"><%= msg.t("common.backHome") %></a></div>
     </main>
+<script src="<%= request.getContextPath() %>/resources/js/confirm-delete.js?v=20261123i18nAudit1" defer></script>
 </body>
 </html>

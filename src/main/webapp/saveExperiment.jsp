@@ -1,6 +1,8 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="com.algolab.i18n.I18n" %>
 <%@ page import="java.security.SecureRandom,java.util.Base64" %>
 <%@ page import="com.algolab.dto.Experiment,com.algolab.util.HtmlUtil" %>
+<% I18n msg = I18n.of(session); %>
 <%
     Experiment pending = (Experiment) session.getAttribute("pendingExperiment");
     String saveError = (String) session.getAttribute("saveError");
@@ -20,12 +22,12 @@
     }
 %>
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="<%= msg.language() %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>AlgoLab - 실험 기록 저장</title>
-    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261123bench1">
+    <title>AlgoLab - <%= msg.t("title.save") %></title>
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261123i18n1">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/history.css">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/experiment.css">
 </head>
@@ -34,44 +36,47 @@
     <main class="container experiment-container">
         <div class="page-heading">
             <p class="eyebrow">SAVE EXPERIMENT</p>
-            <h1>실험 기록 저장</h1>
-            <p class="subtitle">시각화 결과를 실험 기록으로 저장할 수 있습니다.</p>
+            <h1><%= msg.t("save.heading") %></h1>
+            <p class="subtitle"><%= msg.t("save.lead") %></p>
         </div>
         <% if (pending == null) { %>
             <section class="panel experiment-panel">
-                <h2>저장할 실험이 없습니다.</h2>
-                <p class="subtitle">메인 페이지에서 정렬을 실행한 후 다시 시도해 주세요. 이미 저장한 실험은 중복 저장할 수 없습니다.</p>
-                <a class="save-link" href="<%= request.getContextPath() %>/index.jsp">정렬 실행하기</a>
+                <h2><%= msg.t("save.empty") %></h2>
+                <p class="subtitle"><%= msg.t("save.emptyHelp") %></p>
+                <a class="save-link" href="<%= request.getContextPath() %>/index.jsp"><%= msg.t("save.run") %></a>
             </section>
         <% } else { %>
             <section class="panel experiment-panel">
                 <% if (saveError != null) { %><p class="experiment-alert" role="alert"><%= HtmlUtil.escape(saveError) %></p><% } %>
                 <div class="experiment-preview">
-                    <div><span>알고리즘</span><strong><%= HtmlUtil.escape(pending.getAlgorithmLabel()) %></strong></div>
-                    <div><span>배열 크기</span><strong><%= pending.getArraySize() %></strong></div>
-                    <div><span>비교 횟수</span><strong><%= pending.getComparisons() %></strong></div>
-                    <div><span><%= "insertion".equals(pending.getAlgorithm()) ? "이동 횟수" : "merge".equals(pending.getAlgorithm()) ? "병합 배치 횟수" : "교환 횟수" %></span><strong><%= pending.getSwaps() %></strong></div>
+                    <div><span><%= msg.t("common.algorithm") %></span><strong><%= HtmlUtil.escape(pending.getAlgorithmLabel()) %></strong></div>
+                    <div><span><%= msg.t("common.arraySize") %></span><strong><%= pending.getArraySize() %></strong></div>
+                    <div><span><%= msg.t("common.comparisons") %></span><strong><%= pending.getComparisons() %></strong></div>
+                    <div><span><%= "insertion".equals(pending.getAlgorithm()) ? msg.t("common.movements") : "merge".equals(pending.getAlgorithm()) ? msg.t("common.mergeWrites") : msg.t("common.swaps") %></span><strong><%= pending.getSwaps() %></strong></div>
                 </div>
-                <p class="experiment-array"><span>입력 배열</span> [<%= HtmlUtil.escape(pending.getInputArray()) %>]</p>
+                <p class="experiment-array"><span><%= msg.t("common.inputArray") %></span> [<%= HtmlUtil.escape(pending.getInputArray()) %>]</p>
                 <form method="post" action="<%= request.getContextPath() %>/saveExperimentProcess.jsp" class="experiment-form">
                     <input type="hidden" name="csrf" value="<%= csrf %>">
                     <div class="experiment-field">
-                        <label for="title">실험 제목 <span>(필수, 100자 이내)</span></label>
-                        <input id="title" name="title" type="text" maxlength="100" placeholder="예: 역순 배열에서 버블 정렬" value="<%= HtmlUtil.escape(saveDraftTitle) %>" required>
-                        <p class="experiment-hint">이미 등록된 실험 제목은 사용할 수 없습니다.</p>
+                        <label for="title"><%= msg.t("common.title") %> <span><%= msg.t("save.titleInfo") %></span></label>
+                        <input id="title" name="title" type="text" maxlength="100" placeholder="<%= msg.t("save.titleExample") %>" value="<%= HtmlUtil.escape(saveDraftTitle) %>" required
+                               data-error-required="<%= msg.t("validation.experimentTitleRequired") %>"
+                               data-error-invalid="<%= msg.t("validation.invalid") %>">
+                        <p class="experiment-hint"><%= msg.t("save.unique") %></p>
                     </div>
                     <div class="experiment-field">
-                        <label for="memo">실험 메모 <span>(2,000자 이내)</span></label>
-                        <textarea id="memo" name="memo" maxlength="2000" rows="6" placeholder="이번 실험에서 관찰한 내용을 입력해 주세요."><%= HtmlUtil.escape(saveDraftMemo) %></textarea>
+                        <label for="memo"><%= msg.t("common.memo") %> <span><%= msg.t("save.memoInfo") %></span></label>
+                        <textarea id="memo" name="memo" maxlength="2000" rows="6" placeholder="<%= msg.t("save.memoPlaceholder") %>"><%= HtmlUtil.escape(saveDraftMemo) %></textarea>
                     </div>
-                    <p class="experiment-hint">배열과 연산 횟수는 서버에서 계산하므로 직접 수정할 수 없습니다. 현재 저장된 기록은 로그인 없이 조회할 수 있습니다.</p>
+                    <p class="experiment-hint"><%= msg.t("save.readonly") %></p>
                     <div class="experiment-actions">
-                        <a class="experiment-ghost" href="<%= request.getContextPath() %>/index.jsp">취소</a>
-                        <button class="experiment-primary" type="submit">실험 기록 저장하기</button>
+                        <a class="experiment-ghost" href="<%= request.getContextPath() %>/index.jsp"><%= msg.t("common.cancel") %></a>
+                        <button class="experiment-primary" type="submit"><%= msg.t("save.submit") %></button>
                     </div>
                 </form>
             </section>
         <% } %>
     </main>
+    <script src="<%= request.getContextPath() %>/resources/js/form-validation.js?v=20261123i18nAudit1" defer></script>
 </body>
 </html>

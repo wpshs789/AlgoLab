@@ -5,6 +5,12 @@
     if (!root || root.dataset.algorithm !== "merge") return;
     root.dataset.jsVersion = "merge-bars-v2";
 
+    const messages = window.AL_I18N || {};
+    const t = (key, ...args) => {
+        let value = Object.prototype.hasOwnProperty.call(messages, key) ? messages[key] : key;
+        args.forEach((arg, n) => { value = value.replaceAll("{" + n + "}", String(arg)); });
+        return value;
+    };
     const byId = (id) => document.getElementById(id);
     const tree = byId("mergeTree");
     const treeScroll = byId("mergeTreeScroll");
@@ -38,7 +44,7 @@
         steps = JSON.parse(byId("sortData").textContent);
         original = JSON.parse(byId("inputData").textContent);
     } catch (e) {
-        fail("병합 정렬 데이터를 불러오지 못했습니다.");
+        fail(t("js.mergeLoad"));
         return;
     }
     if (!Array.isArray(steps) || !steps.length ||
@@ -47,7 +53,7 @@
         steps.some(step => !step || !Array.isArray(step.array) || step.array.length !== original.length ||
             !Array.isArray(step.output) || !["initial", "mergeSplit", "mergeLeaf", "compare", "mergeTake", "mergeDone", "complete"].includes(step.action)) ||
         original.some((value, i) => value !== steps[0].array[i])) {
-        fail("병합 정렬 단계 데이터가 올바르지 않습니다.");
+        fail(t("js.mergeData"));
         return;
     }
 
@@ -139,7 +145,7 @@
         if (!values.length && capacity === 0) {
             const empty = document.createElement("span");
             empty.className = "merge-empty";
-            empty.textContent = "병합이 시작되면 표시됩니다.";
+            empty.textContent = t("js.mergeEmpty");
             container.appendChild(empty);
             return;
         }
@@ -150,7 +156,7 @@
             slot.className = "merge-bar-slot";
             if (index >= values.length) {
                 slot.classList.add("is-vacant");
-                slot.setAttribute("aria-label", `${index + 1}번째 빈자리`);
+                slot.setAttribute("aria-label", t("js.mergeIndexEmpty", index + 1));
                 const placeholder = document.createElement("div");
                 placeholder.className = "merge-bar-placeholder";
                 slot.appendChild(placeholder);
@@ -158,7 +164,7 @@
                 if (index === activeIndex) slot.classList.add(output ? "is-new" : "is-compared");
                 else if (index < consumedCount && !output) slot.classList.add("is-consumed");
                 else if (output) slot.classList.add("is-placed");
-                slot.setAttribute("aria-label", `${index + 1}번째 값 ${value}`);
+                slot.setAttribute("aria-label", t("js.mergeIndexValue", index + 1, value));
                 const bar = document.createElement("div");
                 bar.className = "merge-bar";
                 bar.style.height = `${barHeight(value)}px`;
@@ -189,14 +195,14 @@
             if (![step.left, step.right, step.depth].every(Number.isInteger) ||
                 step.left < 0 || step.right >= n || step.right < step.left ||
                 !nodes.has(nodeKey(step.left, step.right))) {
-                fail("분할 구간 정보가 올바르지 않습니다.");
+                fail(t("js.mergePartition"));
                 return;
             }
             const current = byRange(step.left, step.right);
             current.visible = true;
             if (step.action === "mergeSplit") {
                 if (step.mid < step.left || step.mid >= step.right) {
-                    fail("분할 기준이 올바르지 않습니다.");
+                    fail(t("js.mergeSplit"));
                     return;
                 }
                 byRange(step.left, step.mid).visible = true;
@@ -238,27 +244,22 @@
     function pause() {
         if (timer !== null) clearInterval(timer);
         timer = null;
-        playBtn.textContent = "▶ 재생";
+        playBtn.textContent = t("js.play");
     }
 
     function describe(step) {
-        if (step.action === "initial") return "전체 배열에서 시작합니다. 다음을 눌러 분할 과정을 확인하세요.";
-        if (step.action === "complete") return "병합 정렬이 완료되었습니다. 모든 구간이 정렬되었습니다.";
-        const span = `${step.left + 1}~${step.right + 1}번째`;
-        if (step.action === "mergeSplit") {
-            return `${span} 구간을 ${step.left + 1}~${step.mid + 1}번째와 ${step.mid + 2}~${step.right + 1}번째 구간으로 분할합니다.`;
-        }
-        if (step.action === "mergeLeaf") return `${step.left + 1}번째 원소는 길이가 1이므로 이미 정렬된 구간입니다.`;
-        if (step.action === "compare") {
-            return `${step.array[step.index1]}과 ${step.array[step.index2]}을 비교합니다. 작은 값을 병합 결과에 먼저 배치합니다.`;
-        }
+        if (step.action === "initial") return t("js.mergeInitial");
+        if (step.action === "complete") return t("js.mergeFinished");
+        if (step.action === "mergeSplit") return t("js.mergeDivide", step.left + 1, step.right + 1, step.mid + 1, step.mid + 2);
+        if (step.action === "mergeLeaf") return t("js.mergeLeaf", step.left + 1);
+        if (step.action === "compare") return t("js.mergeCompare", step.array[step.index1], step.array[step.index2]);
         if (step.action === "mergeTake") {
             const value = step.output[step.output.length - 1];
-            const side = step.index1 <= step.mid ? "왼쪽" : "오른쪽";
-            return `${side} 구간에서 ${value}을 선택해 결과 그래프와 부모 노드의 ${step.output.length}번째 칸에 배치합니다.`;
+            const side = step.index1 <= step.mid ? t("js.mergeLeft") : t("js.mergeRight");
+            return t("js.mergeTake", side, value, step.output.length);
         }
-        if (step.action === "mergeDone") return `${span} 구간의 병합이 완료되었습니다. 부모 노드가 정렬된 배열로 확정되었습니다.`;
-        return "병합 정렬 진행 중";
+        if (step.action === "mergeDone") return t("js.mergeDoneExplain", step.left + 1, step.right + 1);
+        return t("js.mergeRunning");
     }
 
     function isMergingStep(step) {
@@ -278,7 +279,7 @@
             node.element.classList.toggle("is-current", node.key === activeKey);
             node.element.classList.toggle("is-partitioned", !st.done && node.key !== activeKey);
             node.labelElement.textContent = node.l === node.r
-                ? `${node.l + 1}번` : `${node.l + 1}–${node.r + 1}번`;
+                ? t("js.mergeNodeSingle", node.l + 1) : t("js.mergeNodeRange", node.l + 1, node.r + 1);
             node.listElement.replaceChildren();
             const partial = st.partial;
             const displayValues = partial === null ? st.values : partial;
@@ -317,7 +318,7 @@
                 node.listElement.appendChild(pill);
             }
             node.element.classList.toggle("is-merging", isParentMerging);
-            node.element.setAttribute("aria-label", `${node.l + 1}부터 ${node.r + 1}까지: ${displayValues.join(", ")}${partial !== null ? " (병합 중)" : ""}`);
+            node.element.setAttribute("aria-label", t("js.mergeNodeAria", node.l + 1, node.r + 1, displayValues.join(", "), partial !== null ? t("js.mergeNodeActive") : ""));
         }
         for (const edge of edges) {
             const from = snapshot.tree.get(edge.from);
@@ -347,10 +348,10 @@
                 output: true,
                 activeIndex: step.action === "mergeTake" ? step.output.length - 1 : -1
             });
-            phase.textContent = step.action === "mergeDone" ? "병합 완료" : "병합 중";
+            phase.textContent = step.action === "mergeDone" ? t("js.mergeDone") : t("js.mergeInProgress");
             hint.textContent = step.action === "mergeDone"
-                ? "부모 노드에 정렬된 구간이 완성되었습니다. 다음 단계에서는 더 큰 구간을 병합합니다."
-                : "노란 막대를 비교하고, 선택된 원소가 위쪽 트리의 빈자리와 아래쪽 결과 그래프에 차례대로 채워집니다.";
+                ? t("js.mergeDoneHint")
+                : t("js.mergeActiveHint");
         } else {
             renderBars(leftBox, []);
             renderBars(rightBox, []);
@@ -359,16 +360,16 @@
             } else {
                 renderBars(outputBox, []);
             }
-            phase.textContent = step.action === "complete" ? "정렬 완료" : "분할 중";
+            phase.textContent = step.action === "complete" ? t("js.completeShort") : t("js.mergeSplitting");
             hint.textContent = step.action === "mergeLeaf"
-                ? "원소가 하나인 구간은 정렬되어 있습니다. 다음 단계에서는 작은 구간부터 병합합니다."
+                ? t("js.mergeLeafHint")
                 : step.action === "complete"
-                ? "가장 위의 부모 노드와 병합 결과 막대그래프에서 정렬된 배열을 확인할 수 있습니다."
-                : "트리에서 분할 과정을 확인하세요. 병합이 시작되면 부모 노드의 칸이 하나씩 채워집니다.";
+                ? t("js.mergeCompleteHint")
+                : t("js.mergeSplitHint");
         }
 
         currentValues.textContent = isMerging && step.action !== "mergeDone"
-            ? `[${step.array.join(", ")}]  (현재 병합 결과: [${step.output.join(", ")}])`
+            ? `[${step.array.join(", ")}]  (${t("js.mergeTemporary",step.output.join(", "))})`
             : `[${step.array.join(", ")}]`;
         actionText.textContent = describe(step);
         stepText.textContent = `${cursor} / ${steps.length - 1}`;
@@ -408,7 +409,7 @@
     playBtn.addEventListener("click", () => {
         if (timer !== null) { pause(); return; }
         if (cursor === steps.length - 1) { cursor = 0; render(); }
-        playBtn.textContent = "⏸ 일시정지";
+        playBtn.textContent = t("js.pause");
         restartTimer();
     });
     speed.addEventListener("change", () => { if (timer !== null) restartTimer(); });

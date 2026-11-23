@@ -1,6 +1,8 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="com.algolab.i18n.I18n" %>
 <%@ page import="java.sql.Connection, java.sql.PreparedStatement, java.sql.ResultSet" %>
 <%@ page import="com.algolab.util.DBConnection" %>
+<% I18n msg = I18n.of(session); %>
 <%!
     private String html(String value) {
         if (value == null) return "";
@@ -30,11 +32,11 @@
     }
 %>
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="<%= msg.language() %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AlgoLab - DB 연결 테스트</title>
+    <title>AlgoLab - <%= msg.t("title.db") %></title>
     <style>
         body { background: #101827; color: #e8edf7; font-family: sans-serif; margin: 0; padding: 48px 20px; }
         main { max-width: 660px; margin: auto; padding: 28px; border: 1px solid #34415a; border-radius: 14px; background: #192337; }
@@ -46,17 +48,17 @@
 </head>
 <body>
 <main>
-    <h1>AlgoLab · JDBC 연결 테스트</h1>
+    <h1><%= msg.t("db.heading") %></h1>
     <% if (connected) { %>
-        <h2 class="ok">연결 성공!</h2>
-        <p class="message">데이터베이스: <strong><%= html(databaseName) %></strong><br>
-        MySQL 버전: <%= html(mysqlVersion) %></p>
+        <h2 class="ok"><%= msg.t("db.ok") %></h2>
+        <p class="message"><%= msg.t("db.database") %>: <strong><%= html(databaseName) %></strong><br>
+        <%= msg.t("db.version") %>: <%= html(mysqlVersion) %></p>
     <% } else { %>
-        <h2 class="fail">연결 실패</h2>
+        <h2 class="fail"><%= msg.t("db.failed") %></h2>
         <p class="message"><%= html(errorMessage) %></p>
-        <p>설정 파일, MySQL 서버 실행 상태와 JDBC 드라이버 경로를 확인해 주세요.</p>
+        <p><%= msg.t("db.help") %></p>
     <% } %>
-    <p><a href="<%= request.getContextPath() %>/index.jsp">메인으로 돌아가기</a></p>
+    <p><a href="<%= request.getContextPath() %>/index.jsp"><%= msg.t("common.home") %></a></p>
 </main>
 </body>
 </html>
