@@ -21,21 +21,23 @@ public class ExperimentDAO {
     }
 
     /** 실험 제목 중복 여부를 JDBC로 확인한다. 최종 중복 방지는 DB UNIQUE 제약조건이 담당한다. */
-    public boolean existsByTitle(String title) throws SQLException {
-        String sql = "SELECT 1 FROM experiments WHERE title = ? LIMIT 1";
+    public boolean existsByTitle(String title, long ownerId) throws SQLException {
+        String sql = "SELECT 1 FROM experiments WHERE title = ? AND user_id = ? LIMIT 1";
         try (Connection conn = DBConnection.getConnection(application);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, title);
+            pstmt.setLong(2, ownerId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 return rs.next();
             }
         }
     }
 
-    public long insert(Experiment experiment) throws SQLException {
+    public long insert(Experiment experiment, long ownerId) throws SQLException {
+        if (ownerId <= 0) throw new IllegalArgumentException("Owner required");
         String sql = "INSERT INTO experiments "
-            + "(experiment_type, title, algorithm, input_array, array_size, comparisons, swaps, memo) "
-            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            + "(experiment_type, title, algorithm, input_array, array_size, comparisons, swaps, memo, user_id) "
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection(application);
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, experiment.getExperimentType());
@@ -46,6 +48,7 @@ public class ExperimentDAO {
             pstmt.setLong(6, experiment.getComparisons());
             pstmt.setLong(7, experiment.getSwaps());
             pstmt.setString(8, experiment.getMemo());
+            pstmt.setLong(9, ownerId);
             int count = pstmt.executeUpdate();
             if (count != 1) throw new SQLException("실험 기록을 저장하지 못했습니다.");
             try (ResultSet keys = pstmt.getGeneratedKeys()) {
@@ -55,12 +58,13 @@ public class ExperimentDAO {
         }
     }
 
-    public Experiment findById(long id) throws SQLException {
+    public Experiment findById(long id, long ownerId) throws SQLException {
         String sql = "SELECT id, experiment_type, title, algorithm, input_array, array_size, "
-                   + "comparisons, swaps, memo, created_at FROM experiments WHERE id = ?";
+                   + "comparisons, swaps, memo, created_at, user_id, (SELECT display_name FROM users WHERE users.id = experiments.user_id) AS owner_name FROM experiments WHERE id = ? AND user_id = ?";
         try (Connection conn = DBConnection.getConnection(application);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setLong(1, id);
+            pstmt.setLong(2, ownerId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 return rs.next() ? mapRow(rs) : null;
             }
@@ -68,9 +72,9 @@ public class ExperimentDAO {
     }
 
     /** 최신 200건까지 표시. 키워드 검색의 %와 _는 문자 그대로 취급한다. */
-    public List<Experiment> search(String keyword, String algorithm, String order) throws SQLException {
+    public List<Experiment> search(String keyword, String algorithm, String order, long ownerId) throws SQLException {
         StringBuilder sql = new StringBuilder("SELECT id, experiment_type, title, algorithm, "
-            + "input_array, array_size, comparisons, swaps, memo, created_at FROM experiments WHERE 1=1");
+            + "input_array, array_size, comparisons, swaps, memo, created_at, user_id, (SELECT display_name FROM users WHERE users.id = experiments.user_id) AS owner_name FROM experiments WHERE user_id = ?");
         boolean hasKeyword = keyword != null && !keyword.isBlank();
         boolean hasAlgorithm = algorithm != null && !"all".equals(algorithm);
         if (hasKeyword) sql.append(" AND title LIKE ? ESCAPE '!'");
@@ -81,6 +85,7 @@ public class ExperimentDAO {
         try (Connection conn = DBConnection.getConnection(application);
              PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
             int index = 1;
+            pstmt.setLong(index++, ownerId);
             if (hasKeyword) {
                 String escaped = keyword.replace("!", "!!").replace("%", "!%").replace("_", "!_");
                 pstmt.setString(index++, "%" + escaped + "%");
@@ -94,37 +99,44 @@ public class ExperimentDAO {
     }
 
     /** 지정한 ID의 실험 기록을 삭제한다. 반환값은 삭제된 행 수(0 또는 1)다. */
-    public int deleteById(long id) throws SQLException {
+    public int deleteById(long id, long ownerId) throws SQLException {
         if (id <= 0) throw new IllegalArgumentException("올바른 실험 번호가 아닙니다.");
-        String sql = "DELETE FROM experiments WHERE id = ?";
+        String sql = "DELETE FROM experiments WHERE id = ? AND user_id = ?";
         try (Connection conn = DBConnection.getConnection(application);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setLong(1, id);
+            pstmt.setLong(2, ownerId);
             return pstmt.executeUpdate();
         }
     }
 
-    public long countAll() throws SQLException {
+    public long countAll(long ownerId) throws SQLException {
         try (Connection conn = DBConnection.getConnection(application);
-             PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) FROM experiments");
-             ResultSet rs = pstmt.executeQuery()) {
-            rs.next();
-            return rs.getLong(1);
+             PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) FROM experiments WHERE user_id = ?")) {
+            pstmt.setLong(1, ownerId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                rs.next();
+                return rs.getLong(1);
+            }
         }
     }
 
-    public int countAlgorithms() throws SQLException {
+    public int countAlgorithms(long ownerId) throws SQLException {
         try (Connection conn = DBConnection.getConnection(application);
-             PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(DISTINCT algorithm) FROM experiments");
-             ResultSet rs = pstmt.executeQuery()) {
-            rs.next();
-            return rs.getInt(1);
+             PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(DISTINCT algorithm) FROM experiments WHERE user_id = ?")) {
+            pstmt.setLong(1, ownerId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
         }
     }
 
     private Experiment mapRow(ResultSet rs) throws SQLException {
         Experiment e = new Experiment();
         e.setId(rs.getLong("id"));
+        e.setOwnerId(rs.getLong("user_id"));
+        e.setOwnerName(rs.getString("owner_name"));
         e.setExperimentType(rs.getString("experiment_type"));
         e.setTitle(rs.getString("title"));
         e.setAlgorithm(rs.getString("algorithm"));

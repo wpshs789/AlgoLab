@@ -1,15 +1,23 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="com.algolab.i18n.I18n" %>
+<%@ page import="com.algolab.i18n.I18n,com.algolab.auth.Auth,com.algolab.auth.User" %>
 <%@ page import="java.sql.SQLException,java.time.format.DateTimeFormatter" %>
 <%@ page import="com.algolab.dao.ExperimentDAO,com.algolab.dto.Experiment,com.algolab.util.HtmlUtil,com.algolab.util.ExperimentDeleteToken" %>
-<% I18n msg = I18n.of(session); %>
+<%
+    response.setHeader("Cache-Control", "no-store");
+    I18n msg = I18n.of(session);
+    User actor = Auth.current(session);
+    if (actor == null) {
+        response.sendRedirect(request.getContextPath() + "/login.jsp?next=history.jsp");
+        return;
+    }
+%>
 <%
     Experiment record = null;
     String error = null;
     try {
         long id = Long.parseLong(request.getParameter("id"));
         if (id <= 0) throw new NumberFormatException();
-        record = new ExperimentDAO(application).findById(id);
+        record = new ExperimentDAO(application).findById(id, actor.id());
         if (record == null) error = msg.t("err.experimentNotFound");
     } catch (NumberFormatException ex) {
         error = msg.t("err.experimentBadId");
@@ -30,6 +38,7 @@
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/history.css">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/experiment.css">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/confirm-dialog.css?v=20261123dialog2">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/auth.css?v=login1">
 </head>
 <body>
     <jsp:include page="menu.jsp" />
@@ -48,6 +57,7 @@
             <section class="panel experiment-panel">
                 <div class="experiment-detail-head">
                     <h2><%= HtmlUtil.escape(record.getTitle()) %></h2>
+                    <small class="record-owner"><%= msg.t("auth.author") %>: <%= HtmlUtil.escape(record.getOwnerName() == null ? msg.t("auth.legacy") : record.getOwnerName()) %></small>
                     <span>#<%= record.getId() %> · <%= record.getCreatedAt() == null ? "-" : dateFormat.format(record.getCreatedAt().toLocalDateTime()) %></span>
                 </div>
                 <div class="experiment-preview">
@@ -75,6 +85,7 @@
                     <% } else { %>
                         <span class="experiment-hint"><%= msg.t("experiment.unsupported") %></span>
                     <% } %>
+                    <% if (Auth.owns(session, record.getOwnerId())) { %>
                     <form method="post" action="<%= request.getContextPath() %>/deleteExperimentProcess.jsp"
                           data-confirm-message="<%= HtmlUtil.escape(msg.t("history.confirmDelete")) %>"
                                           data-confirm-ok="<%= HtmlUtil.escape(msg.t("common.delete")) %>"
@@ -83,8 +94,9 @@
                         <input type="hidden" name="id" value="<%= record.getId() %>">
                         <button class="experiment-danger" type="submit"><%= msg.t("common.delete") %></button>
                     </form>
+                    <% } %>
                 </div>
-                <p class="experiment-deletion-note"><%= msg.t("experiment.deleteNote") %></p>
+                <% if (Auth.owns(session, record.getOwnerId())) { %><p class="experiment-deletion-note"><%= msg.t("experiment.deleteNote") %></p><% } %>
             </section>
         <% } %>
     </main>

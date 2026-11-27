@@ -1,7 +1,11 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
-<%@ page import="com.algolab.i18n.I18n" %>
+<%@ page import="com.algolab.i18n.I18n,com.algolab.auth.Auth,com.algolab.auth.User" %>
 <%@ page import="java.sql.SQLException,com.algolab.benchmark.BenchmarkReport,com.algolab.dao.BenchmarkDAO,com.algolab.util.BenchmarkToken" %>
 <% I18n msg = I18n.of(session); %>
+<%
+    User actor = Auth.current(session);
+    if (actor == null) { response.sendError(403, msg.t("auth.required")); return; }
+%>
 <%
     String base = request.getContextPath();
     if (!"POST".equalsIgnoreCase(request.getMethod())) {
@@ -26,12 +30,12 @@
     }
     try {
         BenchmarkDAO dao = new BenchmarkDAO(application);
-        if (dao.existsByTitle(title)) {
+        if (dao.existsByTitle(title, actor.id())) {
             session.setAttribute("benchmarkError", msg.t("err.benchDuplicate"));
             response.sendRedirect(base + "/benchmark.jsp");
             return;
         }
-        long savedId = dao.insert(title, pending);
+        long savedId = dao.insert(title, pending, actor.id());
         session.removeAttribute("pendingBenchmark");
         session.removeAttribute("benchmarkDraftTitle");
         response.sendRedirect(base + "/benchmarkDetail.jsp?id=" + savedId);

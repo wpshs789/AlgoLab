@@ -1,8 +1,12 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
-<%@ page import="com.algolab.i18n.I18n" %>
+<%@ page import="com.algolab.i18n.I18n,com.algolab.auth.Auth,com.algolab.auth.User" %>
 <%@ page import="java.sql.SQLException" %>
 <%@ page import="com.algolab.dao.ExperimentDAO,com.algolab.util.ExperimentDeleteToken" %>
 <% I18n msg = I18n.of(session); %>
+<%
+    User actor = Auth.current(session);
+    if (actor == null) { response.sendError(403, msg.t("auth.required")); return; }
+%>
 <%
     // 삭제 요청은 POST만 처리합니다. GET 요청으로 DB가 변경되지 않도록 합니다.
     if (!"POST".equalsIgnoreCase(request.getMethod())) {
@@ -22,12 +26,12 @@
         long id = Long.parseLong(request.getParameter("id"));
         if (id <= 0) throw new NumberFormatException("invalid id");
 
-        int removed = new ExperimentDAO(application).deleteById(id);
+        int removed = new ExperimentDAO(application).deleteById(id, actor.id());
         if (removed == 1) {
             notice = msg.t("notice.deleted");
             succeeded = true;
         } else {
-            notice = msg.t("err.alreadyDeleted");
+            notice = msg.t("auth.deleteDenied");
         }
     } catch (NumberFormatException ex) {
         notice = msg.t("err.badExperimentId");

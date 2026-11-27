@@ -8,6 +8,12 @@ public class Experiment implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private long id;
+    private long ownerId;
+    private String ownerName;
+    public long getOwnerId() { return ownerId; }
+    public void setOwnerId(long id) { ownerId = id; }
+    public String getOwnerName() { return ownerName; }
+    public void setOwnerName(String name) { ownerName = name; }
     private String experimentType = "VISUALIZATION";
     private String title = "";
     private String algorithm = "";

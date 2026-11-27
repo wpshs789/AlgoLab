@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="com.algolab.i18n.I18n" %>
+<%@ page import="com.algolab.i18n.I18n,com.algolab.auth.Auth" %>
 <%@ page import="java.util.Locale,com.algolab.benchmark.BenchmarkReport,com.algolab.benchmark.BenchmarkResult,com.algolab.benchmark.BenchmarkService,com.algolab.util.BenchmarkToken,com.algolab.util.HtmlUtil" %>
-<% I18n msg = I18n.of(session); %>
+<% response.setHeader("Cache-Control", "no-store"); I18n msg = I18n.of(session); %>
 <%
     request.setCharacterEncoding("UTF-8");
     BenchmarkReport report = (BenchmarkReport) session.getAttribute("pendingBenchmark");
@@ -48,6 +48,7 @@
     <title>AlgoLab - <%= msg.t("title.benchmark") %></title>
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261123i18n1">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/benchmark.css?v=20261123i18n1">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/auth.css?v=login1">
 </head>
 <body>
     <jsp:include page="menu.jsp" />
@@ -147,6 +148,9 @@
                     <h2 id="benchmarkSaveHeading"><%= msg.t("benchmark.saveHeading") %></h2>
                     <p class="subtitle"><%= msg.t("benchmark.saveLead") %></p>
                 </div>
+                <% if (Auth.current(session) == null) { %>
+                    <a class="start-btn auth-link" href="<%= request.getContextPath() %>/login.jsp?next=benchmark.jsp"><%= msg.t("auth.loginToSave") %></a>
+                <% } else { %>
                 <form action="<%= request.getContextPath() %>/saveBenchmarkProcess.jsp" method="post" class="benchmark-save-form">
                     <input type="hidden" name="csrf" value="<%= csrf %>">
                     <label for="benchmarkTitle"><%= msg.t("common.title") %></label>
@@ -160,6 +164,7 @@
                     </div>
                     <p class="input-help"><%= msg.t("benchmark.duplicateHint") %></p>
                 </form>
+                <% } %>
             </section>
         <% } else { %>
             <section class="panel benchmark-placeholder">

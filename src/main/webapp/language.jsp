@@ -12,7 +12,7 @@
         // Restrict the redirect to known read-only page paths.
         String relative = next.substring(base.length());
         String path = relative.split("\\?", 2)[0];
-        if (path.matches("/(index|visualizer|benchmark|history|experiment|benchmarkDetail|saveExperiment|dbTest)\\.jsp")) {
+        if (path.matches("/(index|visualizer|benchmark|history|experiment|benchmarkDetail|saveExperiment|login|signup|dbTest)\\.jsp")) {
             target = next;
         }
     }

@@ -21,17 +21,18 @@ public final class BenchmarkDAO {
 
     public BenchmarkDAO(ServletContext application) { this.application = application; }
 
-    public boolean existsByTitle(String title) throws SQLException {
+    public boolean existsByTitle(String title, long ownerId) throws SQLException {
         try (Connection conn = DBConnection.getConnection(application);
-             PreparedStatement ps = conn.prepareStatement("SELECT 1 FROM benchmark_runs WHERE title = ? LIMIT 1")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT 1 FROM benchmark_runs WHERE title = ? AND user_id = ? LIMIT 1")) {
             ps.setString(1, title);
+            ps.setLong(2, ownerId);
             try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
         }
     }
 
     /** 하나의 성능 비교와 다섯 결과를 한 트랜잭션으로 저장합니다. */
-    public long insert(String title, BenchmarkReport report) throws SQLException {
-        if (title == null || title.isBlank() || title.length() > 100 || report == null) {
+    public long insert(String title, BenchmarkReport report, long ownerId) throws SQLException {
+        if (ownerId <= 0 || title == null || title.isBlank() || title.length() > 100 || report == null) {
             throw new IllegalArgumentException("성능 비교 저장 정보가 올바르지 않습니다.");
         }
         try (Connection conn = DBConnection.getConnection(application)) {
@@ -39,12 +40,13 @@ public final class BenchmarkDAO {
             try {
                 long id;
                 try (PreparedStatement ps = conn.prepareStatement(
-                    "INSERT INTO benchmark_runs (title, array_size, input_pattern, repetitions) VALUES (?, ?, ?, ?)",
+                    "INSERT INTO benchmark_runs (title, array_size, input_pattern, repetitions, user_id) VALUES (?, ?, ?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS)) {
                     ps.setString(1, title);
                     ps.setInt(2, report.getArraySize());
                     ps.setString(3, report.getPattern());
                     ps.setInt(4, report.getRepetitions());
+                    ps.setLong(5, ownerId);
                     if (ps.executeUpdate() != 1) throw new SQLException("성능 비교 저장에 실패했습니다.");
                     try (ResultSet keys = ps.getGeneratedKeys()) {
                         if (!keys.next()) throw new SQLException("저장 ID를 찾지 못했습니다.");
@@ -76,21 +78,22 @@ public final class BenchmarkDAO {
         }
     }
 
-    public List<BenchmarkRecord> findRecent(int limit) throws SQLException {
+    public List<BenchmarkRecord> findRecent(int limit, long ownerId) throws SQLException {
         List<BenchmarkRecord> records = new ArrayList<>();
         int boundedLimit = Math.max(1, Math.min(limit, 100));
         try (Connection conn = DBConnection.getConnection(application);
              PreparedStatement ps = conn.prepareStatement(
-                "SELECT id, title, array_size, input_pattern, repetitions, created_at "
-                + "FROM benchmark_runs ORDER BY id DESC LIMIT ?")) {
-            ps.setInt(1, boundedLimit);
+                "SELECT id, title, array_size, input_pattern, repetitions, created_at, user_id, (SELECT display_name FROM users WHERE users.id = benchmark_runs.user_id) AS owner_name "
+                + "FROM benchmark_runs WHERE user_id = ? ORDER BY id DESC LIMIT ?")) {
+            ps.setLong(1, ownerId);
+            ps.setInt(2, boundedLimit);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     // 목록에는 메타데이터만 사용합니다. 상세는 findById에서 5개 결과를 읽습니다.
                     records.add(new BenchmarkRecord(rs.getLong("id"), rs.getString("title"),
                         rs.getTimestamp("created_at"),
                         new BenchmarkReport(rs.getInt("array_size"), rs.getString("input_pattern"),
-                            rs.getInt("repetitions"), emptyRows())));
+                            rs.getInt("repetitions"), emptyRows()), rs.getLong("user_id"), rs.getString("owner_name")));
                 }
             }
         }
@@ -105,16 +108,18 @@ public final class BenchmarkDAO {
         return rows;
     }
 
-    public BenchmarkRecord findById(long id) throws SQLException {
+    public BenchmarkRecord findById(long id, long requestedOwnerId) throws SQLException {
         if (id < 1) return null;
         try (Connection conn = DBConnection.getConnection(application)) {
             String title;
             Timestamp created;
             int size, repeats;
             String pattern;
+            long ownerId; String ownerName;
             try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT title, array_size, input_pattern, repetitions, created_at FROM benchmark_runs WHERE id = ?")) {
+                "SELECT title, array_size, input_pattern, repetitions, created_at, user_id, (SELECT display_name FROM users WHERE users.id = benchmark_runs.user_id) AS owner_name FROM benchmark_runs WHERE id = ? AND user_id = ?")) {
                 ps.setLong(1, id);
+                ps.setLong(2, requestedOwnerId);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (!rs.next()) return null;
                     title = rs.getString("title");
@@ -122,14 +127,16 @@ public final class BenchmarkDAO {
                     pattern = rs.getString("input_pattern");
                     repeats = rs.getInt("repetitions");
                     created = rs.getTimestamp("created_at");
+                    ownerId = rs.getLong("user_id"); ownerName = rs.getString("owner_name");
                 }
             }
             List<BenchmarkResult> rows = new ArrayList<>();
             try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT algorithm, avg_time_ns, avg_comparisons, avg_operations "
-                + "FROM benchmark_results WHERE run_id = ? "
+                + "FROM benchmark_results WHERE run_id = ? AND EXISTS (SELECT 1 FROM benchmark_runs WHERE id = benchmark_results.run_id AND user_id = ?) "
                 + "ORDER BY FIELD(algorithm, 'bubble', 'selection', 'insertion', 'merge', 'quick')")) {
                 ps.setLong(1, id);
+                ps.setLong(2, requestedOwnerId);
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         rows.add(new BenchmarkResult(rs.getString("algorithm"),
@@ -139,15 +146,16 @@ public final class BenchmarkDAO {
                 }
             }
             if (rows.size() != 5) throw new SQLException("저장된 성능 비교 결과에 누락된 알고리즘이 있습니다.");
-            return new BenchmarkRecord(id, title, created, new BenchmarkReport(size, pattern, repeats, rows));
+            return new BenchmarkRecord(id, title, created, new BenchmarkReport(size, pattern, repeats, rows), ownerId, ownerName);
         }
     }
 
-    public int deleteById(long id) throws SQLException {
+    public int deleteById(long id, long ownerId) throws SQLException {
         if (id <= 0) throw new IllegalArgumentException("올바른 실험 번호가 아닙니다.");
         try (Connection conn = DBConnection.getConnection(application);
-             PreparedStatement ps = conn.prepareStatement("DELETE FROM benchmark_runs WHERE id = ?")) {
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM benchmark_runs WHERE id = ? AND user_id = ?")) {
             ps.setLong(1, id);
+            ps.setLong(2, ownerId);
             return ps.executeUpdate(); // 외래키 ON DELETE CASCADE로 결과도 함께 제거
         }
     }

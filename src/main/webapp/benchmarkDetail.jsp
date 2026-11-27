@@ -1,13 +1,21 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="com.algolab.i18n.I18n" %>
+<%@ page import="com.algolab.i18n.I18n,com.algolab.auth.Auth,com.algolab.auth.User" %>
 <%@ page import="java.sql.SQLException,java.util.Locale,java.time.format.DateTimeFormatter,com.algolab.benchmark.BenchmarkRecord,com.algolab.benchmark.BenchmarkReport,com.algolab.benchmark.BenchmarkResult,com.algolab.dao.BenchmarkDAO,com.algolab.util.BenchmarkToken,com.algolab.util.HtmlUtil" %>
-<% I18n msg = I18n.of(session); %>
+<%
+    response.setHeader("Cache-Control", "no-store");
+    I18n msg = I18n.of(session);
+    User actor = Auth.current(session);
+    if (actor == null) {
+        response.sendRedirect(request.getContextPath() + "/login.jsp?next=history.jsp");
+        return;
+    }
+%>
 <%
     BenchmarkRecord saved = null;
     String loadError = null;
     try {
         long id = Long.parseLong(request.getParameter("id"));
-        saved = new BenchmarkDAO(application).findById(id);
+        saved = new BenchmarkDAO(application).findById(id, actor.id());
     } catch (NumberFormatException ex) {
         loadError = msg.t("err.invalidId");
     } catch (SQLException ex) {
@@ -24,6 +32,7 @@
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261123i18n1">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/benchmark.css?v=20261123i18n1">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/confirm-dialog.css?v=20261123dialog2">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/auth.css?v=login1">
 </head><body>
 <jsp:include page="menu.jsp" />
 <main class="container benchmark-container">
@@ -35,7 +44,7 @@
     <% } else { BenchmarkReport r = saved.getReport(); %>
         <section class="panel benchmark-results">
             <div class="benchmark-section-title benchmark-results-title">
-                <div><p class="eyebrow">EXPERIMENT #<%= saved.getId() %></p><h2><%= HtmlUtil.escape(saved.getTitle()) %></h2></div>
+                <div><p class="eyebrow">EXPERIMENT #<%= saved.getId() %></p><h2><%= HtmlUtil.escape(saved.getTitle()) %></h2><small class="record-owner"><%= msg.t("auth.author") %>: <%= HtmlUtil.escape(saved.getOwnerName() == null ? msg.t("auth.legacy") : saved.getOwnerName()) %></small></div>
                 <span class="benchmark-mini-tag"><%= saved.getCreatedAt() == null ? "-" : dateFormat.format(saved.getCreatedAt().toLocalDateTime()) %></span>
             </div>
             <p class="benchmark-detail-meta"><%= msg.f("benchmarkDetail.meta", r.getArraySize(), msg.t("pattern." + r.getPattern()), r.getRepetitions()) %></p>
@@ -56,6 +65,7 @@
         <div class="benchmark-detail-actions">
             <a class="benchmark-link" href="<%= request.getContextPath() %>/history.jsp"><%= msg.t("common.backShort") %></a>
             <a class="benchmark-link" href="<%= request.getContextPath() %>/benchmark.jsp"><%= msg.t("benchmarkDetail.new") %></a>
+            <% if (Auth.owns(session, saved.getOwnerId())) { %>
             <form method="post" action="<%= request.getContextPath() %>/deleteBenchmarkProcess.jsp"
                 data-confirm-message="<%= HtmlUtil.escape(msg.t("benchmarkDetail.confirm")) %>"
                                           data-confirm-ok="<%= HtmlUtil.escape(msg.t("common.delete")) %>"
@@ -64,6 +74,7 @@
                 <input type="hidden" name="id" value="<%= saved.getId() %>">
                 <button type="submit" class="benchmark-delete"><%= msg.t("common.delete") %></button>
             </form>
+            <% } %>
         </div>
     <% } %>
 </main><script src="<%= request.getContextPath() %>/resources/js/confirm-delete.js?v=20261123dialog2" defer></script></body></html>

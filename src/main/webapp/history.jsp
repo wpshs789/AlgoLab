@@ -1,9 +1,17 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="com.algolab.i18n.I18n" %>
+<%@ page import="com.algolab.i18n.I18n,com.algolab.auth.Auth,com.algolab.auth.User" %>
 <%@ page import="java.util.List,java.util.ArrayList,java.sql.SQLException,java.time.format.DateTimeFormatter" %>
 <%@ page import="com.algolab.benchmark.BenchmarkRecord,com.algolab.dao.BenchmarkDAO,com.algolab.util.BenchmarkToken" %>
 <%@ page import="com.algolab.dao.ExperimentDAO,com.algolab.dto.Experiment,com.algolab.util.HtmlUtil,com.algolab.util.ExperimentDeleteToken" %>
-<% I18n msg = I18n.of(session); %>
+<%
+    response.setHeader("Cache-Control", "no-store");
+    I18n msg = I18n.of(session);
+    User actor = Auth.current(session);
+    if (actor == null) {
+        response.sendRedirect(request.getContextPath() + "/login.jsp?next=history.jsp");
+        return;
+    }
+%>
 <%
     request.setCharacterEncoding("UTF-8");
     String keyword = request.getParameter("keyword");
@@ -25,9 +33,9 @@
     String dbError = null;
     try {
         ExperimentDAO dao = new ExperimentDAO(application);
-        records = dao.search(keyword, algorithmFilter, order);
-        totalCount = dao.countAll();
-        algorithmCount = dao.countAlgorithms();
+        records = dao.search(keyword, algorithmFilter, order, actor.id());
+        totalCount = dao.countAll(actor.id());
+        algorithmCount = dao.countAlgorithms(actor.id());
     } catch (SQLException ex) {
         application.log("AlgoLab: 실험 기록 SELECT 실패", ex);
         dbError = msg.t("err.historyDb");
@@ -36,7 +44,7 @@
     List<BenchmarkRecord> benchmarkRecords = new ArrayList<>();
     String benchmarkError = null;
     try {
-        benchmarkRecords = new BenchmarkDAO(application).findRecent(100);
+        benchmarkRecords = new BenchmarkDAO(application).findRecent(100, actor.id());
     } catch (SQLException ex) {
         application.log("AlgoLab: 성능 비교 목록 조회 실패", ex);
         benchmarkError = msg.t("err.historyBenchmarkDb");
@@ -58,6 +66,7 @@
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/history.css">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/benchmark.css?v=20261123i18n1">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/confirm-dialog.css?v=20261123dialog2">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/auth.css?v=login1">
 </head>
 <body>
     <jsp:include page="menu.jsp" />
@@ -134,13 +143,14 @@
                         <% } else { for (Experiment record : records) { %>
                             <tr>
                                 <td class="history-id">#<%= record.getId() %></td>
-                                <td class="history-title-cell"><a class="history-title-link" href="<%= request.getContextPath() %>/experiment.jsp?id=<%= record.getId() %>"><%= HtmlUtil.escape(record.getTitle()) %></a></td>
+                                <td class="history-title-cell"><a class="history-title-link" href="<%= request.getContextPath() %>/experiment.jsp?id=<%= record.getId() %>"><%= HtmlUtil.escape(record.getTitle()) %></a><small class="record-owner"><%= msg.t("auth.author") %>: <%= HtmlUtil.escape(record.getOwnerName() == null ? msg.t("auth.legacy") : record.getOwnerName()) %></small></td>
                                 <td><span class="history-algo history-algo-<%= HtmlUtil.escape(record.getAlgorithm()) %>"><%= HtmlUtil.escape(record.getAlgorithmLabel()) %></span></td>
                                 <td class="history-number"><%= record.getArraySize() %></td>
                                 <td class="history-number"><%= record.getComparisons() %></td>
                                 <td class="history-number" title="<%= "insertion".equals(record.getAlgorithm()) ? msg.t("common.movements") : "merge".equals(record.getAlgorithm()) ? msg.t("common.mergeWrites") : msg.t("common.swaps") %>"><%= record.getSwaps() %></td>
                                 <td class="history-date"><%= record.getCreatedAt() == null ? "-" : dateFormat.format(record.getCreatedAt().toLocalDateTime()) %></td>
                                 <td class="history-manage">
+                                    <% if (Auth.owns(session, record.getOwnerId())) { %>
                                     <form method="post" action="<%= request.getContextPath() %>/deleteExperimentProcess.jsp"
                                           data-confirm-message="<%= HtmlUtil.escape(msg.t("history.confirmDelete")) %>"
                                           data-confirm-ok="<%= HtmlUtil.escape(msg.t("common.delete")) %>"
@@ -149,6 +159,7 @@
                                         <input type="hidden" name="id" value="<%= record.getId() %>">
                                         <button class="history-delete-button" type="submit" aria-label="<%= HtmlUtil.escape(msg.f("history.deleteLabel", record.getTitle())) %>"><%= msg.t("common.delete") %></button>
                                     </form>
+                                    <% } else { %><span class="record-owner">—</span><% } %>
                                 </td>
                             </tr>
                         <% } } %>
@@ -172,7 +183,7 @@
                     <tr><td class="benchmark-history-empty" colspan="6"><%= benchmarkError == null ? msg.t("history.noBenchmark") : msg.t("history.checkBenchmark") %></td></tr>
                 <% } else { for (BenchmarkRecord record : benchmarkRecords) { %>
                     <tr><td>#<%= record.getId() %></td>
-                        <td><a href="<%= request.getContextPath() %>/benchmarkDetail.jsp?id=<%= record.getId() %>"><%= HtmlUtil.escape(record.getTitle()) %></a></td>
+                        <td><a href="<%= request.getContextPath() %>/benchmarkDetail.jsp?id=<%= record.getId() %>"><%= HtmlUtil.escape(record.getTitle()) %></a><small class="record-owner"><%= msg.t("auth.author") %>: <%= HtmlUtil.escape(record.getOwnerName() == null ? msg.t("auth.legacy") : record.getOwnerName()) %></small></td>
                         <td><%= record.getReport().getArraySize() %><%= msg.t("common.items") %></td>
                         <td><%= msg.t("pattern." + record.getReport().getPattern()) %></td>
                         <td><%= record.getReport().getRepetitions() %><%= msg.t("common.repetitions") %></td>

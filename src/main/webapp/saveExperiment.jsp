@@ -1,8 +1,14 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="com.algolab.i18n.I18n" %>
+<%@ page import="com.algolab.i18n.I18n,com.algolab.auth.Auth,com.algolab.auth.User" %>
 <%@ page import="java.security.SecureRandom,java.util.Base64" %>
 <%@ page import="com.algolab.dto.Experiment,com.algolab.util.HtmlUtil" %>
-<% I18n msg = I18n.of(session); %>
+<% response.setHeader("Cache-Control", "no-store"); I18n msg = I18n.of(session); %>
+<%
+    if (Auth.current(session) == null) {
+        response.sendRedirect(request.getContextPath() + "/login.jsp?next=saveExperiment.jsp");
+        return;
+    }
+%>
 <%
     Experiment pending = (Experiment) session.getAttribute("pendingExperiment");
     String saveError = (String) session.getAttribute("saveError");
@@ -30,6 +36,7 @@
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261123i18n1">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/history.css">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/experiment.css">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/auth.css?v=login1">
 </head>
 <body>
     <jsp:include page="menu.jsp" />

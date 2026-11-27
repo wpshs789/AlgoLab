@@ -1,0 +1,23 @@
+/* Account pages and shared account navigation */
+.header .auth-nav { display:flex; align-items:center; gap:12px; font-size:14px; white-space:nowrap; }
+.header .auth-nav form { margin:0; }
+.header .auth-nav a, .header .auth-nav button { color:#cbd5e1; text-decoration:none; background:none; border:0; font:inherit; cursor:pointer; padding:6px 0; }
+.header .auth-nav a:hover,.header .auth-nav button:hover { color:#38bdf8; }
+.auth-user { color:#7dd3fc; max-width:140px; overflow:hidden; text-overflow:ellipsis; }
+.auth-container { max-width:500px; }
+.auth-panel .start-btn { width:100%; }
+.auth-panel .form-group { margin-bottom:22px; }
+.auth-footer { margin:24px 0 0; color:#94a3b8; font-size:14px; text-align:center; }
+.auth-footer a { color:#7dd3fc; }
+.auth-alert,.auth-notice { border:1px solid #475569; border-radius:10px; padding:12px; margin:0 0 20px; line-height:1.5; }
+.auth-alert { color:#fecaca; border-color:#7f1d1d; background:#331c27; }
+.auth-notice { color:#bbf7d0; border-color:#166534; background:#142c26; }
+.auth-link { text-decoration:none; }
+.record-owner { display:block; color:#94a3b8; font-size:12px; margin-top:6px; overflow-wrap:anywhere; }
+@media (max-width: 768px) { .header .auth-nav { gap:9px; font-size:13px; } }
+@media (max-width: 500px) { .header .auth-nav { order:4; flex:1 1 100%; justify-content:center; } }
+
+/* Loaded after page-specific CSS; preserve equal navigation spacing. */
+.header nav { gap:24px; }
+@media (max-width:768px) { .header nav { gap:13px; } }
+@media (max-width:500px) { .header nav { gap:18px; } }

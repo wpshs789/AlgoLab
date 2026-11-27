@@ -1,6 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="com.algolab.i18n.I18n" %>
-<% I18n msg = I18n.of(session); %>
+<% response.setHeader("Cache-Control", "no-store"); I18n msg = I18n.of(session); %>
 <%
     // 파일 업로드 또는 직전 실행에서 저장한 숫자 배열을 기본 입력값으로 표시한다.
     // lastNumbers에는 서버가 검증하고 정규화한 정수 문자열만 저장한다.
@@ -21,6 +21,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>AlgoLab - <%= msg.t("title.index") %></title>
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261123filepicker2">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/auth.css?v=login1">
 </head>
 <body>
     <jsp:include page="menu.jsp" />

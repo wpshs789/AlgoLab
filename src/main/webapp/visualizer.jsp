@@ -1,11 +1,11 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="com.algolab.i18n.I18n" %>
+<%@ page import="com.algolab.i18n.I18n,com.algolab.auth.Auth" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="com.algolab.dto.SortStep" %>
 <%@ page import="com.algolab.service.SortingService" %>
 <%@ page import="com.algolab.service.ExperimentService" %>
-<% I18n msg = I18n.of(session); %>
+<% response.setHeader("Cache-Control", "no-store"); I18n msg = I18n.of(session); %>
 <%
     request.setCharacterEncoding("UTF-8");
 
@@ -106,6 +106,7 @@
     <% if ("quick".equals(algorithm)) { %>
         <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/quicksort.css?v=quick-v1">
     <% } %>
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/auth.css?v=login1">
 </head>
 <body>
     <jsp:include page="menu.jsp" />
@@ -228,7 +229,7 @@
                     <h2><%= msg.t("viz.saveHeading") %></h2>
                     <p class="subtitle"><%= msg.t("viz.saveLead") %></p>
                 </div>
-                <a class="save-link" href="<%= request.getContextPath() %>/saveExperiment.jsp"><%= msg.t("viz.save") %></a>
+                <a class="save-link" href="<%= request.getContextPath() %>/saveExperiment.jsp"><%= msg.t(Auth.current(session) == null ? "auth.loginToSave" : "viz.save") %></a>
             </section>
             <div class="bottom-nav"><a class="back-link" href="index.jsp"><%= msg.t("viz.back") %></a></div>
 
