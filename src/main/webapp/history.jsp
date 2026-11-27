@@ -57,6 +57,7 @@
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/style.css?v=20261123i18n1">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/history.css">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/benchmark.css?v=20261123i18n1">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/resources/css/confirm-dialog.css?v=20261123dialog2">
 </head>
 <body>
     <jsp:include page="menu.jsp" />
@@ -182,6 +183,6 @@
         </section>
         <div class="bottom-nav"><a class="back-link" href="<%= request.getContextPath() %>/index.jsp"><%= msg.t("common.backHome") %></a></div>
     </main>
-<script src="<%= request.getContextPath() %>/resources/js/confirm-delete.js?v=20261123i18nAudit1" defer></script>
+<script src="<%= request.getContextPath() %>/resources/js/confirm-delete.js?v=20261123dialog2" defer></script>
 </body>
 </html>
