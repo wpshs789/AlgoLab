@@ -50,6 +50,7 @@
         benchmarkError = msg.t("err.historyBenchmarkDb");
     }
     String deleteCsrf = ExperimentDeleteToken.getOrCreate(session);
+    String benchmarkDeleteCsrf = BenchmarkToken.getOrCreate(session);
     String historyNotice = (String) session.getAttribute("historyNotice");
     String historyError = (String) session.getAttribute("historyError");
     session.removeAttribute("historyNotice");
@@ -177,17 +178,29 @@
             </div>
             <% if (benchmarkError != null) { %><div class="history-notice" role="alert"><%= HtmlUtil.escape(benchmarkError) %></div><% } %>
             <div class="benchmark-table-wrap"><table class="benchmark-history-table">
-                <thead><tr><th><%= msg.t("common.id") %></th><th><%= msg.t("common.title") %></th><th><%= msg.t("common.arraySize") %></th><th><%= msg.t("history.pattern") %></th><th><%= msg.t("benchmark.repetitions") %></th><th><%= msg.t("history.savedDate") %></th></tr></thead>
+                <thead><tr><th><%= msg.t("common.id") %></th><th><%= msg.t("common.title") %></th><th><%= msg.t("common.arraySize") %></th><th><%= msg.t("history.pattern") %></th><th><%= msg.t("benchmark.repetitions") %></th><th><%= msg.t("history.savedDate") %></th><th scope="col"><%= msg.t("history.manage") %></th></tr></thead>
                 <tbody>
                 <% if (benchmarkRecords.isEmpty()) { %>
-                    <tr><td class="benchmark-history-empty" colspan="6"><%= benchmarkError == null ? msg.t("history.noBenchmark") : msg.t("history.checkBenchmark") %></td></tr>
+                    <tr><td class="benchmark-history-empty" colspan="7"><%= benchmarkError == null ? msg.t("history.noBenchmark") : msg.t("history.checkBenchmark") %></td></tr>
                 <% } else { for (BenchmarkRecord record : benchmarkRecords) { %>
                     <tr><td>#<%= record.getId() %></td>
                         <td><a href="<%= request.getContextPath() %>/benchmarkDetail.jsp?id=<%= record.getId() %>"><%= HtmlUtil.escape(record.getTitle()) %></a><small class="record-owner"><%= msg.t("auth.author") %>: <%= HtmlUtil.escape(record.getOwnerName() == null ? msg.t("auth.legacy") : record.getOwnerName()) %></small></td>
                         <td><%= record.getReport().getArraySize() %><%= msg.t("common.items") %></td>
                         <td><%= msg.t("pattern." + record.getReport().getPattern()) %></td>
                         <td><%= record.getReport().getRepetitions() %><%= msg.t("common.repetitions") %></td>
-                        <td><%= record.getCreatedAt() == null ? "-" : dateFormat.format(record.getCreatedAt().toLocalDateTime()) %></td></tr>
+                        <td><%= record.getCreatedAt() == null ? "-" : dateFormat.format(record.getCreatedAt().toLocalDateTime()) %></td>
+                        <td class="history-manage">
+                            <% if (Auth.owns(session, record.getOwnerId())) { %>
+                            <form method="post" action="<%= request.getContextPath() %>/deleteBenchmarkProcess.jsp"
+                                  data-confirm-message="<%= HtmlUtil.escape(msg.t("benchmarkDetail.confirm")) %>"
+                                  data-confirm-ok="<%= HtmlUtil.escape(msg.t("common.delete")) %>"
+                                  data-confirm-cancel="<%= HtmlUtil.escape(msg.t("common.cancel")) %>">
+                                <input type="hidden" name="csrf" value="<%= benchmarkDeleteCsrf %>">
+                                <input type="hidden" name="id" value="<%= record.getId() %>">
+                                <button class="history-delete-button" type="submit" aria-label="<%= HtmlUtil.escape(msg.f("history.deleteLabel", record.getTitle())) %>"><%= msg.t("common.delete") %></button>
+                            </form>
+                            <% } else { %><span class="record-owner">—</span><% } %>
+                        </td></tr>
                 <% } } %>
                 </tbody>
             </table></div>
